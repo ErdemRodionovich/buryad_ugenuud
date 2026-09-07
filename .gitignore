@@ -1,4 +1,5 @@
 out/
+.vite/
 node_modules/
 todo
 .vscode/

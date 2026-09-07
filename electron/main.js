@@ -1,3 +1,5 @@
+/* global MAIN_WINDOW_VITE_DEV_SERVER_URL */
+
 const { app, BrowserWindow, ipcMain } = require('electron')
 const os = require('os')
 const path = require('path')
@@ -7,7 +9,7 @@ const FramedStream = require('framed-stream')
 
 const { isMac, isLinux, isWindows } = require('which-runtime')
 const { command, flag } = require('paparam')
-const pkg = require('../package.json')
+const pkg = require(path.join(app.getAppPath(), 'package.json'))
 const { name, productName, version, upgrade } = pkg
 
 const protocol = name
@@ -17,7 +19,9 @@ const workers = new Map()
 
 const appName = productName ?? name
 
-const outLogStream = fs.createWriteStream('/media/data/EclipseWork/buryad_ugenuud/.vscode/logs/worker-output.log', { flags: 'a' })
+const outLogStream = fs.createWriteStream(path.join(app.getPath('logs'), 'worker-output.log'), {
+  flags: 'a'
+})
 
 const cmd = command(
   appName,
@@ -51,7 +55,7 @@ function sendToAll(name, data) {
 }
 
 function getWorker(specifier) {
-  console.log("getWorker called with ", specifier)
+  console.log('getWorker called with ', specifier)
   if (workers.has(specifier)) return workers.get(specifier)
   const appPath = getAppPath()
   let dir = null
@@ -73,28 +77,41 @@ function getWorker(specifier) {
   }
 
   const extension = isLinux ? '.AppImage' : isMac ? '.app' : '.msix'
-  console.log("getWorker dir:", dir, " updates:", updates, " version:", version, " upgrade:", upgrade, " productName:", productName, " appPath:", appPath)
-  const argsForWorker = [
-    "--inspect",
-    "--inspect-port",
-    "9230",
-    "--updates",
+  console.log(
+    'getWorker dir:',
+    dir,
+    ' updates:',
     updates,
-    "--version",
+    ' version:',
     version,
-    "--upgrade",
+    ' upgrade:',
     upgrade,
-    "--productName",
+    ' productName:',
+    productName,
+    ' appPath:',
+    appPath
+  )
+  const argsForWorker = [
+    '--inspect',
+    '--inspect-port',
+    '9230',
+    '--updates',
+    updates,
+    '--version',
+    version,
+    '--upgrade',
+    upgrade,
+    '--productName',
     productName + extension,
-    "--dir",
+    '--dir',
     dir
   ]
   if (appPath) {
-    argsForWorker.push("--appPath")
+    argsForWorker.push('--appPath')
     argsForWorker.push(appPath)
   }
-  const worker = PearRuntime.run(require.resolve('..' + specifier), argsForWorker)
-  console.log("getWorker worker created")
+  const worker = PearRuntime.run(path.join(app.getAppPath(), specifier), argsForWorker)
+  console.log('getWorker worker created')
   const pipe = new FramedStream(worker)
 
   function sendWorkerStdout(data) {
@@ -130,7 +147,7 @@ function getWorker(specifier) {
     workers.delete(specifier)
   })
   app.on('before-quit', onBeforeQuit)
-  console.log("getWorker worker returned ", specifier)
+  console.log('getWorker worker returned ', specifier)
   return pipe
 }
 
@@ -139,14 +156,14 @@ async function createWindow() {
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, '..', 'electron', 'preload.js'),
+      preload: path.join(__dirname, 'preload.js'),
       sandbox: true,
       nodeIntegration: false,
       contextIsolation: true
     }
   })
 
-  const devServerUrl = process.env.PEAR_DEV_SERVER_URL
+  const devServerUrl = MAIN_WINDOW_VITE_DEV_SERVER_URL
 
   if (devServerUrl) {
     await win.loadURL(devServerUrl)
@@ -154,7 +171,7 @@ async function createWindow() {
     return
   }
 
-  await win.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'))
+  await win.loadFile(path.join(__dirname, '..', 'renderer', 'main_window', 'index.html'))
 }
 
 ipcMain.handle('pear:applyUpdate', () => {

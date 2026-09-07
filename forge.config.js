@@ -28,7 +28,18 @@ function getWindowsKitVersion() {
 let packagerConfig = {
   icon: 'build/icon',
   protocols: [{ name: appName, schemes: [pkg.name] }],
-  derefSymlinks: true
+  derefSymlinks: true,
+  ignore: (file) => {
+    if (!file) return false
+    return !(
+      file === '/.vite' ||
+      file.startsWith('/.vite/') ||
+      file === '/node_modules' ||
+      file.startsWith('/node_modules/') ||
+      file === '/workers' ||
+      file.startsWith('/workers/')
+    )
+  }
 }
 
 if (process.env.MAC_CODESIGN_IDENTITY) {
@@ -64,10 +75,10 @@ module.exports = {
         windowsKitVersion: getWindowsKitVersion(),
         ...(process.env.WINDOWS_SIGN_HOOK
           ? {
-              windowsSignOptions: {
-                hookModulePath: process.env.WINDOWS_SIGN_HOOK
-              }
+            windowsSignOptions: {
+              hookModulePath: process.env.WINDOWS_SIGN_HOOK
             }
+          }
           : {})
       }
     },
@@ -176,6 +187,16 @@ module.exports = {
   },
 
   plugins: [
+    {
+      name: '@electron-forge/plugin-vite',
+      config: {
+        build: [
+          { entry: 'electron/main.js', config: 'vite.main.config.js' },
+          { entry: 'electron/preload.js', config: 'vite.preload.config.js', target: 'preload' }
+        ],
+        renderer: [{ name: 'main_window', config: 'vite.renderer.config.js' }]
+      }
+    },
     {
       name: 'electron-forge-plugin-universal-prebuilds',
       config: {}
