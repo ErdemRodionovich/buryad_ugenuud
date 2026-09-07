@@ -99,7 +99,7 @@ function App() {
                     })
                 }
             >
-                Create poll
+                Create example poll
             </button>
             <button onClick={() => send({ type: 'poll', data: { cmd: 'get-all' } })}>
                 Get all polls
