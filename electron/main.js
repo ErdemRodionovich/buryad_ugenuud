@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const os = require('os')
 const path = require('path')
+const fs = require('fs')
 const PearRuntime = require('pear-runtime')
 const FramedStream = require('framed-stream')
 
@@ -15,6 +16,8 @@ const mainWorkerSpecifier = '/workers/main.js'
 const workers = new Map()
 
 const appName = productName ?? name
+
+const outLogStream = fs.createWriteStream('/media/data/EclipseWork/buryad_ugenuud/.vscode/logs/worker-output.log', { flags: 'a' })
 
 const cmd = command(
   appName,
@@ -48,6 +51,7 @@ function sendToAll(name, data) {
 }
 
 function getWorker(specifier) {
+  console.log("getWorker called with ", specifier)
   if (workers.has(specifier)) return workers.get(specifier)
   const appPath = getAppPath()
   let dir = null
@@ -69,21 +73,38 @@ function getWorker(specifier) {
   }
 
   const extension = isLinux ? '.AppImage' : isMac ? '.app' : '.msix'
-
-  const worker = PearRuntime.run(require.resolve('..' + specifier), [
+  console.log("getWorker dir:", dir, " updates:", updates, " version:", version, " upgrade:", upgrade, " productName:", productName, " appPath:", appPath)
+  const argsForWorker = [
+    "--inspect",
+    "--inspect-port",
+    "9230",
+    "--updates",
     updates,
+    "--version",
     version,
+    "--upgrade",
     upgrade,
+    "--productName",
     productName + extension,
-    dir,
-    appPath
-  ])
+    "--dir",
+    dir
+  ]
+  if (appPath) {
+    argsForWorker.push("--appPath")
+    argsForWorker.push(appPath)
+  }
+  const worker = PearRuntime.run(require.resolve('..' + specifier), argsForWorker)
+  console.log("getWorker worker created")
   const pipe = new FramedStream(worker)
 
   function sendWorkerStdout(data) {
+    outLogStream.write(data)
+    outLogStream.write('\n')
     sendToAll('pear:worker:stdout:' + specifier, data)
   }
   function sendWorkerStderr(data) {
+    outLogStream.write(data)
+    outLogStream.write('\n')
     sendToAll('pear:worker:stderr:' + specifier, data)
   }
   function sendWorkerIPC(data) {
@@ -109,6 +130,7 @@ function getWorker(specifier) {
     workers.delete(specifier)
   })
   app.on('before-quit', onBeforeQuit)
+  console.log("getWorker worker returned ", specifier)
   return pipe
 }
 

@@ -57,7 +57,9 @@ const offWorkerIpc = bridge.onWorkerIPC(workers.main, (data) => {
   if (parsed?.type === "pong") {
     document.getElementById('pong').innerText = 'Worker time: ' + parsed.time
   } else if (parsed?.type === "polls") {
-    document.getElementById('polls').innerText = parsed.data
+    document.getElementById('polls').innerText = JSON.stringify(parsed.data)
+  } else if (parsed?.type === "error") {
+    document.getElementById('errors').innerText += "<br>" + parsed.data
   }
 
   if (!sentHello) {
@@ -71,7 +73,7 @@ document.getElementById('ping-btn').onclick = () => {
 }
 
 document.getElementById('create-poll-btn').onclick = () => {
-  bridge.writeWorkerIPC(workers.main, JSON.stringify({ type: 'poll', data: { cmd: 'create', data: { question: 'Where to go?', options: ['There', 'Somewhere'] } } }))
+  bridge.writeWorkerIPC(workers.main, JSON.stringify({ type: 'poll', data: { cmd: 'create', poll: { question: 'Where to go?', options: ['There', 'Somewhere'] } } }))
 }
 
 document.getElementById('get-polls-btn').onclick = () => {
