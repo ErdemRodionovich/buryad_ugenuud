@@ -112,6 +112,10 @@ function App() {
         setOptions(['', ''])
     }
 
+    function addOption() {
+        setOptions((current) => [...current, ''])
+    }
+
     function createLanguage(event) {
         event.preventDefault()
         request({
@@ -341,6 +345,9 @@ function App() {
                                 required
                             />
                         ))}
+                        <button type='button' onClick={addOption}>
+                            Add option
+                        </button>
                         <button className='primary' type='submit'>
                             Publish poll
                         </button>
