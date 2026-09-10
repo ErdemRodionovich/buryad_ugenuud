@@ -14,8 +14,6 @@ const { name, productName, version, upgrade } = pkg
 
 const protocol = name
 const mainWorkerSpecifier = '/workers/main.js'
-const developmentPollKey = 'c57cb9f05c06d532ecb3d1a7e17e48b5443a8ee7bba22b1ddf2fff569b98f706'
-const productionPollKey = '905faa42828d69872918ad06778fa98acdf1e8891a525f48e2eb4f42ba5fffc6'
 
 const workers = new Map()
 
@@ -28,7 +26,6 @@ const outLogStream = fs.createWriteStream(path.join(app.getPath('logs'), 'worker
 const cmd = command(
   appName,
   flag('--storage <dir>', 'pass custom storage to pear-runtime'),
-  flag('--poll-key <key>', 'use a custom poll network bootstrap key'),
   flag('--no-updates', 'start without OTA updates'),
   flag('--no-sandbox', 'start without Chromium sandbox').hide()
 )
@@ -37,7 +34,6 @@ cmd.parse(app.isPackaged ? process.argv.slice(1) : process.argv.slice(2))
 
 const pearStore = cmd.flags.storage
 const updates = cmd.flags.updates
-const pollKey = cmd.flags.pollKey || (app.isPackaged ? productionPollKey : developmentPollKey)
 
 if (pearStore) app.setPath('userData', pearStore)
 
@@ -107,8 +103,6 @@ function getWorker(specifier) {
     upgrade,
     '--productName',
     productName + extension,
-    '--poll-key',
-    pollKey,
     '--dir',
     dir
   ]

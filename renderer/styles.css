@@ -183,6 +183,105 @@ input {
     color: #a34f2e;
 }
 
+.language-home {
+    margin-top: 28px;
+}
+
+.language-intro,
+.language-form,
+.joined-list,
+.language-bar {
+    border-top: 3px solid #2c705b;
+    background: #fbfcf8;
+    padding: 22px;
+}
+
+.language-intro p:last-child {
+    max-width: 600px;
+    color: #668073;
+    line-height: 1.5;
+}
+
+.language-forms {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.language-form {
+    display: grid;
+    gap: 10px;
+}
+
+.language-form h2,
+.joined-list h2 {
+    margin-bottom: 8px;
+}
+
+textarea {
+    box-sizing: border-box;
+    width: 100%;
+    resize: vertical;
+    padding: 12px;
+    border: 1px solid #c6d5ca;
+    border-radius: 3px;
+    color: #26352f;
+    font:
+        15px Georgia,
+        serif;
+}
+
+.joined-list {
+    margin-top: 24px;
+}
+
+.language-row {
+    display: block;
+    width: 100%;
+    padding: 14px 0;
+    border-top: 1px solid #d8e3d9;
+    text-align: left;
+}
+
+.language-row span {
+    display: block;
+    margin-top: 5px;
+    color: #789086;
+}
+
+.language-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 28px;
+}
+
+.language-bar h2,
+.language-bar p {
+    margin-bottom: 4px;
+}
+
+.language-actions {
+    display: grid;
+    justify-items: end;
+    gap: 8px;
+}
+
+.share-key {
+    padding: 8px 12px;
+    background: #2c705b;
+    color: white;
+}
+
+code {
+    max-width: 420px;
+    overflow-wrap: anywhere;
+    color: #668073;
+    font-size: 11px;
+}
+
 @media (max-width: 760px) {
     .container {
         padding: 24px 16px 40px;
@@ -193,11 +292,21 @@ input {
     }
 
     .workspace,
-    .create-panel {
+    .create-panel,
+    .language-forms {
         grid-template-columns: 1fr;
     }
 
     .create-panel {
         align-items: stretch;
+    }
+
+    .language-bar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .language-actions {
+        justify-items: start;
     }
 }
