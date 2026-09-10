@@ -172,6 +172,53 @@ input {
         serif;
 }
 
+.option-fields,
+.media-fields {
+    display: grid;
+    gap: 6px;
+}
+
+.media-entry {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px;
+    align-items: end;
+}
+
+.media-entry input {
+    grid-column: 1 / -1;
+}
+
+.media-entry .remove-media {
+    padding: 8px 10px;
+    color: #a34f2e;
+    font-size: 12px;
+    text-decoration: underline;
+}
+
+.media-fields label {
+    color: #668073;
+    font: 11px monospace;
+    text-transform: uppercase;
+}
+
+.media-preview {
+    display: block;
+    max-width: 100%;
+    max-height: 220px;
+    margin-top: 10px;
+    object-fit: contain;
+}
+
+.media-previews {
+    display: grid;
+    gap: 8px;
+}
+
+.options .media-preview {
+    max-height: 140px;
+}
+
 .primary {
     padding: 12px 18px;
     background: #2c705b;

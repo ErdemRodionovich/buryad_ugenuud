@@ -4,6 +4,38 @@ import './styles.css'
 
 const workerSpecifier = '/workers/main.js'
 const decoder = new TextDecoder('utf-8')
+const maxMediaBytes = 10 * 1024 * 1024
+
+function emptyMedia() {
+    return { url: '', data: '', mime: '', name: '' }
+}
+
+function mediaType(media) {
+    if (media?.mime?.startsWith('video/')) return 'video'
+    if (media?.mime?.startsWith('image/')) return 'image'
+    return media?.type
+}
+
+function MediaPreview({ media }) {
+    const items = Array.isArray(media) ? media : media?.url ? [media] : []
+    return (
+        <div className='media-previews'>
+            {items.map((item, index) => {
+                const source = item.data ? `data:${item.mime};base64,${item.data}` : item.url
+                const type = mediaType(item)
+                if (type === 'video') {
+                    return <video key={index} className='media-preview' src={source} controls preload='metadata' />
+                }
+                if (type === 'image') return <img key={index} className='media-preview' src={source} alt='' />
+                return null
+            })}
+        </div>
+    )
+}
+
+function pollText(value) {
+    return typeof value === 'string' ? value : value?.text || ''
+}
 
 function App() {
     const [version] = useState(() => window.bridge.pkg().version)
@@ -16,8 +48,11 @@ function App() {
     const [joinKey, setJoinKey] = useState('')
     const [polls, setPolls] = useState([])
     const [selectedPollId, setSelectedPollId] = useState(null)
-    const [question, setQuestion] = useState('')
-    const [options, setOptions] = useState(['', ''])
+    const [question, setQuestion] = useState({ text: '', media: [] })
+    const [options, setOptions] = useState([
+        { text: '', media: [] },
+        { text: '', media: [] }
+    ])
     const [notice, setNotice] = useState('')
     const [updateReady, setUpdateReady] = useState(false)
     const [updating, setUpdating] = useState(false)
@@ -25,17 +60,14 @@ function App() {
 
     useEffect(() => {
         window.bridge.startWorker(workerSpecifier)
-
-        const offStdout = window.bridge.onWorkerStdout(workerSpecifier, (data) => {
+        const offStdout = window.bridge.onWorkerStdout(workerSpecifier, (data) =>
             console.log('worker stdout', '[', workerSpecifier, ']:', decoder.decode(data))
-        })
-        const offStderr = window.bridge.onWorkerStderr(workerSpecifier, (data) => {
+        )
+        const offStderr = window.bridge.onWorkerStderr(workerSpecifier, (data) =>
             console.error('worker stderr', '[', workerSpecifier, ']:', decoder.decode(data))
-        })
+        )
         const offIpc = window.bridge.onWorkerIPC(workerSpecifier, (data) => {
             const message = decoder.decode(data)
-            console.log('worker ipc', '[', workerSpecifier, ']:', message)
-
             let parsed
             try {
                 parsed = JSON.parse(message)
@@ -43,7 +75,6 @@ function App() {
                 if (message === 'updating') setStatus('UPDATING...')
                 if (message === 'updated') setUpdateReady(true)
             }
-
             if (parsed?.type === 'languages') {
                 setLanguages(parsed.data)
                 setActiveLanguageId(parsed.active)
@@ -59,7 +90,6 @@ function App() {
             offIpc()
             offExit()
         })
-
         return () => {
             clearTimeout(refreshTimer.current)
             offStdout()
@@ -106,14 +136,17 @@ function App() {
         event.preventDefault()
         request({
             type: 'poll',
-            data: { cmd: 'create', languageId: activeLanguageId, poll: { question, options } }
+            data: {
+                cmd: 'create',
+                languageId: activeLanguageId,
+                poll: { question: question.text, questionMedia: question.media, options }
+            }
         })
-        setQuestion('')
-        setOptions(['', ''])
-    }
-
-    function addOption() {
-        setOptions((current) => [...current, ''])
+        setQuestion({ text: '', media: [] })
+        setOptions([
+            { text: '', media: [] },
+            { text: '', media: [] }
+        ])
     }
 
     function createLanguage(event) {
@@ -162,54 +195,26 @@ function App() {
                     <div className='language-intro'>
                         <p className='eyebrow'>Shared study spaces</p>
                         <h2>Choose a language to begin</h2>
-                        <p>
-                            Each language has its own replicated poll database. Create one or join with a shared
-                            key.
-                        </p>
+                        <p>Each language has its own replicated poll database. Create one or join with a shared key.</p>
                     </div>
                     <div className='language-forms'>
                         <form className='language-form' onSubmit={createLanguage}>
                             <h2>Create a language</h2>
-                            <input
-                                value={languageName}
-                                onChange={(event) => setLanguageName(event.target.value)}
-                                placeholder='Language name'
-                                required
-                            />
-                            <textarea
-                                value={languageDescription}
-                                onChange={(event) => setLanguageDescription(event.target.value)}
-                                placeholder='Short description'
-                                rows='3'
-                            />
-                            <button className='primary' type='submit'>
-                                Create language
-                            </button>
+                            <input value={languageName} onChange={(event) => setLanguageName(event.target.value)} placeholder='Language name' required />
+                            <textarea value={languageDescription} onChange={(event) => setLanguageDescription(event.target.value)} placeholder='Short description' rows='3' />
+                            <button className='primary' type='submit'>Create language</button>
                         </form>
                         <form className='language-form' onSubmit={joinLanguage}>
                             <h2>Join a language</h2>
-                            <input
-                                value={joinKey}
-                                onChange={(event) => setJoinKey(event.target.value)}
-                                placeholder='Paste language key'
-                                pattern='[0-9a-fA-F]{64}'
-                                title='Use the 64-character language key'
-                                required
-                            />
-                            <button className='primary' type='submit'>
-                                Join language
-                            </button>
+                            <input value={joinKey} onChange={(event) => setJoinKey(event.target.value)} placeholder='Paste language key' pattern='[0-9a-fA-F]{64}' title='Use the 64-character language key' required />
+                            <button className='primary' type='submit'>Join language</button>
                         </form>
                     </div>
                     {languages.length > 0 && (
                         <div className='joined-list'>
                             <h2>Your languages</h2>
                             {languages.map((language) => (
-                                <button
-                                    className='language-row'
-                                    key={language.id}
-                                    onClick={() => selectLanguage(language.id)}
-                                >
+                                <button className='language-row' key={language.id} onClick={() => selectLanguage(language.id)}>
                                     <strong>{language.name}</strong>
                                     <span>{language.description || 'No description'}</span>
                                 </button>
@@ -226,131 +231,53 @@ function App() {
                             <p>{activeLanguage.description}</p>
                         </div>
                         <div className='language-actions'>
-                            <button
-                                className='quiet'
-                                onClick={() => {
-                                    setActiveLanguageId(null)
-                                    setPolls([])
-                                }}
-                            >
-                                All languages
-                            </button>
-                            <button
-                                className='share-key'
-                                onClick={() => navigator.clipboard?.writeText(activeLanguage.key)}
-                            >
-                                Copy key
-                            </button>
+                            <button className='quiet' onClick={() => { setActiveLanguageId(null); setPolls([]) }}>All languages</button>
+                            <button className='share-key' onClick={() => navigator.clipboard?.writeText(activeLanguage.key)}>Copy key</button>
                             <code>{activeLanguage.key}</code>
                         </div>
                     </div>
                     <section className='workspace'>
                         <div className='poll-list'>
-                            <div className='section-heading'>
-                                <h2>Open conversations</h2>
-                                <button className='quiet' onClick={refresh}>
-                                    Refresh
-                                </button>
-                            </div>
+                            <div className='section-heading'><h2>Open conversations</h2><button className='quiet' onClick={refresh}>Refresh</button></div>
                             {polls.length === 0 && <p className='empty'>No polls yet. Start the first one.</p>}
                             {polls.map((poll) => (
-                                <button
-                                    className={`poll-row ${poll.id === selectedPollId ? 'active' : ''}`}
-                                    key={poll.id}
-                                    onClick={() => setSelectedPollId(poll.id)}
-                                >
-                                    <strong>{poll.question}</strong>
-                                    <span>
-                                        {poll.closed ? 'Closed' : 'Open'} ·{' '}
-                                        {Object.values(poll.votes || {}).reduce((sum, count) => sum + count, 0)} votes
-                                    </span>
+                                <button className={`poll-row ${poll.id === selectedPollId ? 'active' : ''}`} key={poll.id} onClick={() => setSelectedPollId(poll.id)}>
+                                    <strong>{pollText(poll.question)}</strong>
+                                    <span>{poll.closed ? 'Closed' : 'Open'} · {Object.values(poll.votes || {}).reduce((sum, count) => sum + count, 0)} votes</span>
                                 </button>
                             ))}
                         </div>
                         <div className='poll-detail'>
                             {selectedPoll ? (
                                 <>
-                                    <p className='eyebrow'>
-                                        {selectedPoll.closed ? 'Voting closed' : 'Cast your vote'}
-                                    </p>
-                                    <h2>{selectedPoll.question}</h2>
+                                    <p className='eyebrow'>{selectedPoll.closed ? 'Voting closed' : 'Cast your vote'}</p>
+                                    <h2>{pollText(selectedPoll.question)}</h2>
+                                    <MediaPreview media={selectedPoll.questionMedia} />
                                     <div className='options'>
                                         {selectedPoll.options.map((option, index) => (
-                                            <button
-                                                key={option}
-                                                disabled={selectedPoll.closed}
-                                                onClick={() =>
-                                                    request({
-                                                        type: 'poll',
-                                                        data: {
-                                                            cmd: 'vote',
-                                                            languageId: activeLanguageId,
-                                                            pollId: selectedPoll.id,
-                                                            optionIndex: index
-                                                        }
-                                                    })
-                                                }
-                                            >
-                                                <span>{option}</span>
+                                            <button key={index} disabled={selectedPoll.closed} onClick={() => request({ type: 'poll', data: { cmd: 'vote', languageId: activeLanguageId, pollId: selectedPoll.id, optionIndex: index } })}>
+                                                <span>{pollText(option)}<MediaPreview media={option.media} /></span>
                                                 <b>{selectedPoll.votes?.[index] || 0}</b>
                                             </button>
                                         ))}
                                     </div>
-                                    {!selectedPoll.closed && (
-                                        <button
-                                            className='close-vote'
-                                            onClick={() =>
-                                                request({
-                                                    type: 'poll',
-                                                    data: {
-                                                        cmd: 'close',
-                                                        languageId: activeLanguageId,
-                                                        pollId: selectedPoll.id
-                                                    }
-                                                })
-                                            }
-                                        >
-                                            Close voting
-                                        </button>
-                                    )}
+                                    {!selectedPoll.closed && <button className='close-vote' onClick={() => request({ type: 'poll', data: { cmd: 'close', languageId: activeLanguageId, pollId: selectedPoll.id } })}>Close voting</button>}
                                 </>
-                            ) : (
-                                <p className='empty'>Select a poll to see the question and current results.</p>
-                            )}
+                            ) : <p className='empty'>Select a poll to see the question and current results.</p>}
                         </div>
                     </section>
                     <form className='create-panel' onSubmit={createPoll}>
-                        <div>
-                            <p className='eyebrow'>New poll</p>
-                            <h2>Ask the community</h2>
-                        </div>
-                        <input
-                            value={question}
-                            onChange={(event) => setQuestion(event.target.value)}
-                            placeholder='What should we decide together?'
-                            required
-                        />
+                        <div><p className='eyebrow'>New poll</p><h2>Ask the community</h2></div>
+                        <input value={question.text} onChange={(event) => setQuestion((current) => ({ ...current, text: event.target.value }))} placeholder='What should we decide together?' required />
+                        <MediaFields value={question.media} onChange={(media) => setQuestion((current) => ({ ...current, media }))} onError={(error) => setNotice(error.message)} label='Question media' />
                         {options.map((option, index) => (
-                            <input
-                                key={index}
-                                value={option}
-                                onChange={(event) =>
-                                    setOptions((current) =>
-                                        current.map((item, itemIndex) =>
-                                            itemIndex === index ? event.target.value : item
-                                        )
-                                    )
-                                }
-                                placeholder={`Option ${index + 1}`}
-                                required
-                            />
+                            <div className='option-fields' key={index}>
+                                <input value={option.text} onChange={(event) => setOptions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, text: event.target.value } : item))} placeholder={`Option ${index + 1}`} required />
+                                <MediaFields value={option.media} onChange={(media) => setOptions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, media } : item))} onError={(error) => setNotice(error.message)} label={`Option ${index + 1} media`} />
+                            </div>
                         ))}
-                        <button type='button' onClick={addOption}>
-                            Add option
-                        </button>
-                        <button className='primary' type='submit'>
-                            Publish poll
-                        </button>
+                        <button type='button' onClick={() => setOptions((current) => [...current, { text: '', media: [] }])}>Add option</button>
+                        <button className='primary' type='submit'>Publish poll</button>
                     </form>
                     {notice && <p className='notice'>{notice}</p>}
                 </>
@@ -359,8 +286,44 @@ function App() {
     )
 }
 
-createRoot(document.getElementById('root')).render(
-    <StrictMode>
-        <App />
-    </StrictMode>
-)
+function bytesToBase64(buffer) {
+    const bytes = new Uint8Array(buffer)
+    let binary = ''
+    for (let offset = 0; offset < bytes.length; offset += 0x8000) binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000))
+    return btoa(binary)
+}
+
+function MediaFields({ value, onChange, onError, label }) {
+    function addMedia() { onChange([...value, emptyMedia()]) }
+    function removeMedia(index) { onChange(value.filter((_, mediaIndex) => mediaIndex !== index)) }
+
+    async function handleFile(index, event) {
+        const file = event.target.files?.[0]
+        if (!file) return
+        try {
+            if (file.size > maxMediaBytes) throw new Error('Each media file must be 10 MB or smaller')
+            if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) throw new Error('Choose an image or video file')
+            const data = bytesToBase64(await file.arrayBuffer())
+            onChange(value.map((media, mediaIndex) => mediaIndex === index ? { url: '', data, mime: file.type, name: file.name } : media))
+        } catch (error) {
+            onError(error)
+            event.target.value = ''
+        }
+    }
+
+    return (
+        <div className='media-fields'>
+            {value.map((media, index) => (
+                <div className='media-entry' key={index}>
+                    <label>{index === 0 ? label : `${label} ${index + 1}`}</label>
+                    <input key={`${index}-${media.name}`} type='file' accept='image/*,video/*' onChange={(event) => handleFile(index, event)} />
+                    {media.name && <small>{media.name}</small>}
+                    <button type='button' className='remove-media' onClick={() => removeMedia(index)}>Remove</button>
+                </div>
+            ))}
+            <button type='button' onClick={addMedia}>Add media</button>
+        </div>
+    )
+}
+
+createRoot(document.getElementById('root')).render(<StrictMode><App /></StrictMode>)
