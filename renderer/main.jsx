@@ -8,6 +8,7 @@ const decoder = new TextDecoder('utf-8')
 function App() {
     const [version] = useState(() => window.bridge.pkg().version)
     const [status, setStatus] = useState(`v${version}`)
+    const [peerCount, setPeerCount] = useState(0)
     const [polls, setPolls] = useState([])
     const [selectedPollId, setSelectedPollId] = useState(null)
     const [question, setQuestion] = useState('')
@@ -40,6 +41,7 @@ function App() {
 
             if (parsed?.type === 'polls') setPolls(Object.values(parsed.data))
             if (parsed?.type === 'error') setNotice(parsed.data)
+            if (parsed?.type === 'peers') setPeerCount(parsed.data)
         })
         const offExit = window.bridge.onWorkerExit(workerSpecifier, (code) => {
             console.log('Worker exited with code', code)
@@ -109,7 +111,9 @@ function App() {
                     <p className='eyebrow'>Buryad Ugenuud</p>
                     <h1>{updateReady ? 'Update ready!' : 'Community polls'}</h1>
                 </div>
-                <span className='status'>{status}</span>
+                <span className='status'>
+                    {peerCount} {peerCount === 1 ? 'peer' : 'peers'} connected · {status}
+                </span>
             </header>
             {updateReady && (
                 <button onClick={applyUpdate} disabled={updating}>
