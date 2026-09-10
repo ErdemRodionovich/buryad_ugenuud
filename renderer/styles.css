@@ -1,7 +1,7 @@
 :root {
-    color: #ffffff;
-    background: linear-gradient(135deg, #21c437 0%, #0e4f15 100%);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #26352f;
+    background: #eef3ed;
+    font-family: Georgia, 'Times New Roman', serif;
 }
 
 body {
@@ -12,36 +12,192 @@ body {
 .container {
     box-sizing: border-box;
     min-height: 100vh;
-    padding: 48px 24px;
-    text-align: center;
+    max-width: 1100px;
+    margin: auto;
+    padding: 36px 28px 64px;
 }
 
 h1 {
-    font-size: 48px;
-    text-shadow: 2px 2px 4px rgb(0 0 0 / 30%);
+    margin: 0;
+    color: #1d4a3b;
+    font-size: 42px;
 }
 
 button {
-    margin: 8px;
-    padding: 12px 24px;
-    border: 2px solid white;
-    border-radius: 8px;
-    background: green;
-    color: white;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
     cursor: pointer;
-    font-size: 16px;
-}
-
-button:hover {
-    background: greenyellow;
-    color: black;
+    font: inherit;
 }
 
 button:disabled {
-    cursor: wait;
     opacity: 0.7;
 }
 
-p {
-    white-space: pre-wrap;
+.topbar,
+.section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.topbar {
+    border-bottom: 1px solid #c6d5ca;
+    padding-bottom: 24px;
+}
+
+.eyebrow {
+    margin: 0 0 8px;
+    color: #a34f2e;
+    font:
+        700 12px Georgia,
+        serif;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.status {
+    color: #668073;
+    font: 13px monospace;
+}
+
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.4fr);
+    gap: 24px;
+    margin-top: 28px;
+}
+
+.poll-list,
+.poll-detail,
+.create-panel {
+    border-top: 3px solid #2c705b;
+    background: #fbfcf8;
+    padding: 22px;
+}
+
+h2 {
+    margin: 0 0 18px;
+    color: #1d4a3b;
+    font-size: 25px;
+}
+
+.quiet {
+    color: #a34f2e;
+    font-size: 14px;
+}
+
+.poll-row {
+    display: block;
+    width: 100%;
+    padding: 14px 0;
+    border-top: 1px solid #d8e3d9;
+    text-align: left;
+}
+
+.poll-row span {
+    display: block;
+    margin-top: 6px;
+    color: #789086;
+    font: 12px monospace;
+}
+
+.poll-row.active strong {
+    color: #a34f2e;
+}
+
+.empty {
+    color: #789086;
+    line-height: 1.5;
+}
+
+.poll-detail {
+    min-height: 280px;
+}
+
+.options {
+    display: grid;
+    gap: 10px;
+}
+
+.options button {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border: 1px solid #c6d5ca;
+    background: #eef3ed;
+    text-align: left;
+}
+
+.options button:hover {
+    border-color: #a34f2e;
+    background: #f7e7df;
+}
+
+.options b {
+    color: #a34f2e;
+}
+
+.close-vote {
+    margin-top: 22px;
+    color: #a34f2e;
+    text-decoration: underline;
+}
+
+.create-panel {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr 1fr 1fr auto;
+    align-items: end;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.create-panel h2 {
+    margin-bottom: 0;
+}
+
+input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #c6d5ca;
+    border-radius: 3px;
+    background: white;
+    color: #26352f;
+    font:
+        15px Georgia,
+        serif;
+}
+
+.primary {
+    padding: 12px 18px;
+    background: #2c705b;
+    color: white;
+    white-space: nowrap;
+}
+
+.notice {
+    color: #a34f2e;
+}
+
+@media (max-width: 760px) {
+    .container {
+        padding: 24px 16px 40px;
+    }
+
+    h1 {
+        font-size: 32px;
+    }
+
+    .workspace,
+    .create-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .create-panel {
+        align-items: stretch;
+    }
 }
