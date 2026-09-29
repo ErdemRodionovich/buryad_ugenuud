@@ -1,8 +1,11 @@
-import { StrictMode, useEffect, useRef, useState } from 'react'
+import { StrictMode, useEffect, useRef, useState, useContext } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
+import { PollContext, PollProvider } from './PollContext'
+import { Polls } from './Polls'
+import { IPCContext, IPCProvider } from './IPCContext'
+import { ActiveLanguageContext, ActiveLanguageProvider } from './ActiveLanguageContext'
 
-const workerSpecifier = '/workers/main.js'
 const decoder = new TextDecoder('utf-8')
 const maxMediaBytes = 10 * 1024 * 1024
 
@@ -33,21 +36,14 @@ function MediaPreview({ media }) {
     )
 }
 
-function pollText(value) {
-    return typeof value === 'string' ? value : value?.text || ''
-}
-
 function App() {
     const [version] = useState(() => window.bridge.pkg().version)
     const [status, setStatus] = useState(`v${version}`)
     const [peerCount, setPeerCount] = useState(0)
     const [languages, setLanguages] = useState([])
-    const [activeLanguageId, setActiveLanguageId] = useState(null)
     const [languageName, setLanguageName] = useState('')
     const [languageDescription, setLanguageDescription] = useState('')
     const [joinKey, setJoinKey] = useState('')
-    const [polls, setPolls] = useState([])
-    const [selectedPollId, setSelectedPollId] = useState(null)
     const [question, setQuestion] = useState({ text: '', media: [] })
     const [options, setOptions] = useState([
         { text: '', media: [] },
@@ -57,6 +53,10 @@ function App() {
     const [updateReady, setUpdateReady] = useState(false)
     const [updating, setUpdating] = useState(false)
     const refreshTimer = useRef(null)
+
+    const { workerSpecifier, send } = useContext(IPCContext)
+    const { activeLanguageId, setActiveLanguageId } = useContext(ActiveLanguageContext)
+    const { setPolls, refresh } = useContext(PollContext)
 
     useEffect(() => {
         window.bridge.startWorker(workerSpecifier)
@@ -116,14 +116,6 @@ function App() {
         }
     }
 
-    function send(message) {
-        window.bridge.writeWorkerIPC(workerSpecifier, JSON.stringify(message))
-    }
-
-    function refresh() {
-        send({ type: 'poll', data: { cmd: 'get-all', languageId: activeLanguageId } })
-    }
-
     function request(message) {
         setNotice('')
         send(message)
@@ -171,7 +163,6 @@ function App() {
         send({ type: 'language', data: { cmd: 'select', id } })
     }
 
-    const selectedPoll = polls.find((poll) => poll.id === selectedPollId)
     const activeLanguage = languages.find((language) => language.id === activeLanguageId)
 
     return (
@@ -236,36 +227,7 @@ function App() {
                             <code>{activeLanguage.key}</code>
                         </div>
                     </div>
-                    <section className='workspace'>
-                        <div className='poll-list'>
-                            <div className='section-heading'><h2>Open conversations</h2><button className='quiet' onClick={refresh}>Refresh</button></div>
-                            {polls.length === 0 && <p className='empty'>No polls yet. Start the first one.</p>}
-                            {polls.map((poll) => (
-                                <button className={`poll-row ${poll.id === selectedPollId ? 'active' : ''}`} key={poll.id} onClick={() => setSelectedPollId(poll.id)}>
-                                    <strong>{pollText(poll.question)}</strong>
-                                    <span>{poll.closed ? 'Closed' : 'Open'} · {Object.values(poll.votes || {}).reduce((sum, count) => sum + count, 0)} votes</span>
-                                </button>
-                            ))}
-                        </div>
-                        <div className='poll-detail'>
-                            {selectedPoll ? (
-                                <>
-                                    <p className='eyebrow'>{selectedPoll.closed ? 'Voting closed' : 'Cast your vote'}</p>
-                                    <h2>{pollText(selectedPoll.question)}</h2>
-                                    <MediaPreview media={selectedPoll.questionMedia} />
-                                    <div className='options'>
-                                        {selectedPoll.options.map((option, index) => (
-                                            <button key={index} disabled={selectedPoll.closed} onClick={() => request({ type: 'poll', data: { cmd: 'vote', languageId: activeLanguageId, pollId: selectedPoll.id, optionIndex: index } })}>
-                                                <span>{pollText(option)}<MediaPreview media={option.media} /></span>
-                                                <b>{selectedPoll.votes?.[index] || 0}</b>
-                                            </button>
-                                        ))}
-                                    </div>
-                                    {!selectedPoll.closed && <button className='close-vote' onClick={() => request({ type: 'poll', data: { cmd: 'close', languageId: activeLanguageId, pollId: selectedPoll.id } })}>Close voting</button>}
-                                </>
-                            ) : <p className='empty'>Select a poll to see the question and current results.</p>}
-                        </div>
-                    </section>
+                    <Polls />
                     <form className='create-panel' onSubmit={createPoll}>
                         <div><p className='eyebrow'>New poll</p><h2>Ask the community</h2></div>
                         <input value={question.text} onChange={(event) => setQuestion((current) => ({ ...current, text: event.target.value }))} placeholder='What should we decide together?' required />
@@ -326,4 +288,14 @@ function MediaFields({ value, onChange, onError, label }) {
     )
 }
 
-createRoot(document.getElementById('root')).render(<StrictMode><App /></StrictMode>)
+createRoot(document.getElementById('root')).render(
+    <StrictMode>
+        <IPCProvider>
+            <ActiveLanguageProvider>
+                <PollProvider>
+                    <App />
+                </PollProvider>
+            </ActiveLanguageProvider>
+        </IPCProvider>
+    </StrictMode>
+)
