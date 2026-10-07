@@ -1,40 +1,14 @@
-import { StrictMode, useEffect, useRef, useState, useContext } from 'react'
+import { StrictMode, useEffect, useState, useContext } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 import { PollContext, PollProvider } from './PollContext'
 import { Polls } from './Polls'
 import { IPCContext, IPCProvider } from './IPCContext'
 import { ActiveLanguageContext, ActiveLanguageProvider } from './ActiveLanguageContext'
+import { MediaFields } from './Media'
+
 
 const decoder = new TextDecoder('utf-8')
-const maxMediaBytes = 10 * 1024 * 1024
-
-function emptyMedia() {
-    return { url: '', data: '', mime: '', name: '' }
-}
-
-function mediaType(media) {
-    if (media?.mime?.startsWith('video/')) return 'video'
-    if (media?.mime?.startsWith('image/')) return 'image'
-    return media?.type
-}
-
-function MediaPreview({ media }) {
-    const items = Array.isArray(media) ? media : media?.url ? [media] : []
-    return (
-        <div className='media-previews'>
-            {items.map((item, index) => {
-                const source = item.data ? `data:${item.mime};base64,${item.data}` : item.url
-                const type = mediaType(item)
-                if (type === 'video') {
-                    return <video key={index} className='media-preview' src={source} controls preload='metadata' />
-                }
-                if (type === 'image') return <img key={index} className='media-preview' src={source} alt='' />
-                return null
-            })}
-        </div>
-    )
-}
 
 function App() {
     const [version] = useState(() => window.bridge.pkg().version)
@@ -49,14 +23,13 @@ function App() {
         { text: '', media: [] },
         { text: '', media: [] }
     ])
-    const [notice, setNotice] = useState('')
+
     const [updateReady, setUpdateReady] = useState(false)
     const [updating, setUpdating] = useState(false)
-    const refreshTimer = useRef(null)
 
-    const { workerSpecifier, send } = useContext(IPCContext)
+    const { workerSpecifier, send, request, notice, setNotice } = useContext(IPCContext)
     const { activeLanguageId, setActiveLanguageId } = useContext(ActiveLanguageContext)
-    const { setPolls, refresh } = useContext(PollContext)
+    const { setPolls, resetRefresher, clearRefresherTimeout } = useContext(PollContext)
 
     useEffect(() => {
         window.bridge.startWorker(workerSpecifier)
@@ -91,7 +64,7 @@ function App() {
             offExit()
         })
         return () => {
-            clearTimeout(refreshTimer.current)
+            clearRefresherTimeout()
             offStdout()
             offStderr()
             offIpc()
@@ -116,14 +89,6 @@ function App() {
         }
     }
 
-    function request(message) {
-        setNotice('')
-        send(message)
-        if (message.type !== 'poll') return
-        clearTimeout(refreshTimer.current)
-        refreshTimer.current = setTimeout(refresh, 250)
-    }
-
     function createPoll(event) {
         event.preventDefault()
         request({
@@ -134,6 +99,7 @@ function App() {
                 poll: { question: question.text, questionMedia: question.media, options }
             }
         })
+        resetRefresher()
         setQuestion({ text: '', media: [] })
         setOptions([
             { text: '', media: [] },
@@ -248,45 +214,6 @@ function App() {
     )
 }
 
-function bytesToBase64(buffer) {
-    const bytes = new Uint8Array(buffer)
-    let binary = ''
-    for (let offset = 0; offset < bytes.length; offset += 0x8000) binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000))
-    return btoa(binary)
-}
-
-function MediaFields({ value, onChange, onError, label }) {
-    function addMedia() { onChange([...value, emptyMedia()]) }
-    function removeMedia(index) { onChange(value.filter((_, mediaIndex) => mediaIndex !== index)) }
-
-    async function handleFile(index, event) {
-        const file = event.target.files?.[0]
-        if (!file) return
-        try {
-            if (file.size > maxMediaBytes) throw new Error('Each media file must be 10 MB or smaller')
-            if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) throw new Error('Choose an image or video file')
-            const data = bytesToBase64(await file.arrayBuffer())
-            onChange(value.map((media, mediaIndex) => mediaIndex === index ? { url: '', data, mime: file.type, name: file.name } : media))
-        } catch (error) {
-            onError(error)
-            event.target.value = ''
-        }
-    }
-
-    return (
-        <div className='media-fields'>
-            {value.map((media, index) => (
-                <div className='media-entry' key={index}>
-                    <label>{index === 0 ? label : `${label} ${index + 1}`}</label>
-                    <input key={`${index}-${media.name}`} type='file' accept='image/*,video/*' onChange={(event) => handleFile(index, event)} />
-                    {media.name && <small>{media.name}</small>}
-                    <button type='button' className='remove-media' onClick={() => removeMedia(index)}>Remove</button>
-                </div>
-            ))}
-            <button type='button' onClick={addMedia}>Add media</button>
-        </div>
-    )
-}
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>

@@ -3,6 +3,7 @@ import './styles.css'
 import { IPCContext } from './IPCContext'
 import { PollContext } from './PollContext'
 import { ActiveLanguageContext } from './ActiveLanguageContext'
+import { MediaPreview } from './Media'
 
 function pollText(value) {
     return typeof value === 'string' ? value : value?.text || ''
@@ -10,7 +11,7 @@ function pollText(value) {
 
 export function Polls() {
     const { polls, setPolls, selectedPollId, setSelectedPollId, refresh } = useContext(PollContext)
-    const { send } = useContext(IPCContext)
+    const { request } = useContext(IPCContext)
     const { activeLanguageId } = useContext(ActiveLanguageContext)
 
     const selectedPoll = polls.find((poll) => poll.id === selectedPollId)
