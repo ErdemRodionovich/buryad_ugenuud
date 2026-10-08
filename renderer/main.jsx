@@ -6,7 +6,7 @@ import { Polls } from './Polls'
 import { IPCContext, IPCProvider } from './IPCContext'
 import { ActiveLanguageContext, ActiveLanguageProvider } from './ActiveLanguageContext'
 import { MediaFields } from './Media'
-
+import { TranslateWord } from './TranslateWord'
 
 const decoder = new TextDecoder('utf-8')
 
@@ -193,6 +193,7 @@ function App() {
                             <code>{activeLanguage.key}</code>
                         </div>
                     </div>
+                    <TranslateWord />
                     <Polls />
                     <form className='create-panel' onSubmit={createPoll}>
                         <div><p className='eyebrow'>New poll</p><h2>Ask the community</h2></div>
