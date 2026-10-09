@@ -34,5 +34,8 @@ contextBridge.exposeInMainWorld('bridge', {
   },
   writeWorkerIPC: (specifier, data) => {
     return ipcRenderer.invoke('pear:worker:writeIPC:' + specifier, data)
+  },
+  yTranslate: (text, apiKey, folderId, targetLang) => {
+    return ipcRenderer.invoke('yandex-translate', { text, apiKey, folderId, targetLang });
   }
 })

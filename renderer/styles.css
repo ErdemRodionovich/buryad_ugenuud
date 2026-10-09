@@ -71,6 +71,7 @@ button:disabled {
     margin-top: 28px;
 }
 
+.translation-api-details,
 .translate-panel,
 .poll-list,
 .poll-detail,
@@ -231,6 +232,7 @@ input {
     color: #a34f2e;
 }
 
+.translation-api-details,
 .translate-panel,
 .language-home {
     margin-top: 28px;
@@ -299,6 +301,7 @@ textarea {
     color: #789086;
 }
 
+.translation-api-field,
 .translate-bar,
 .language-bar {
     display: flex;

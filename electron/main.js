@@ -209,6 +209,34 @@ ipcMain.handle('app:afterUpdate', () => {
   }
   app.quit()
 })
+ipcMain.handle('yandex-translate', async (event, { text, apiKey, folderId, targetLang }) => {
+  try {
+    const response = await fetch('https://translate.api.cloud.yandex.net/translate/v2/translate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Api-Key ${apiKey}`
+      },
+      body: JSON.stringify({
+        texts: [text],
+        targetLanguageCode: targetLang,
+        folderId: folderId
+      })
+    });
+
+    const data = await response.json();
+    if (data.translations) {
+      return data.translations[0].text;
+    } else if (data.message) {
+      throw Error('Cannot translate via Yandex: ' + data.message)
+    } else {
+      throw Error('Received unsupported response from Yandex Translate: ' + JSON.stringify(data))
+    }
+  } catch (error) {
+    console.error('Translation error:', error);
+    return 'Translation failed';
+  }
+});
 
 function handleDeepLink(url) {
   console.log('deep link:', url)

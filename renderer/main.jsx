@@ -7,6 +7,8 @@ import { IPCContext, IPCProvider } from './IPCContext'
 import { ActiveLanguageContext, ActiveLanguageProvider } from './ActiveLanguageContext'
 import { MediaFields } from './Media'
 import { TranslateWord } from './TranslateWord'
+import { TranslationAPI_Context, TranslationAPI_Provider } from './Translation/TranslationAPI_Context'
+import { TranslationAPI_Details } from './Translation/TranslationAPI_Details'
 
 const decoder = new TextDecoder('utf-8')
 
@@ -28,8 +30,12 @@ function App() {
     const [updating, setUpdating] = useState(false)
 
     const { workerSpecifier, send, request, notice, setNotice } = useContext(IPCContext)
-    const { activeLanguageId, setActiveLanguageId } = useContext(ActiveLanguageContext)
+    const { activeLanguageId, setActiveLanguageId, isOwnerOfLanguage, setIsOwnerOfLanguage } = useContext(ActiveLanguageContext)
     const { setPolls, resetRefresher, clearRefresherTimeout } = useContext(PollContext)
+
+    const activeLanguage = findActiveLanguage()
+
+    const { setYKey, setYFolderID } = useContext(TranslationAPI_Context)
 
     useEffect(() => {
         window.bridge.startWorker(workerSpecifier)
@@ -50,11 +56,19 @@ function App() {
             }
             if (parsed?.type === 'languages') {
                 setLanguages(parsed.data)
-                setActiveLanguageId(parsed.active)
+                if (activeLanguageId !== parsed.active && activeLanguageId) {
+                    selectLanguage(parsed.active)
+                }
+                const lang = parsed.data.find((language) => language.id === parsed.active)
+                setIsOwnerOfLanguage(lang ? lang.isOwner : false)
             }
             if (parsed?.type === 'polls') setPolls(Object.values(parsed.data))
             if (parsed?.type === 'error') setNotice(parsed.data)
             if (parsed?.type === 'peers') setPeerCount(parsed.data)
+            if (parsed?.type === 'translation-api-details') {
+                setYKey(parsed.data.yKey)
+                setYFolderID(parsed.data.yFolderID)
+            }
         })
         const offExit = window.bridge.onWorkerExit(workerSpecifier, (code) => {
             console.log('Worker exited with code', code)
@@ -125,11 +139,15 @@ function App() {
 
     function selectLanguage(id) {
         setActiveLanguageId(id)
+        const lang = findActiveLanguage(id)
+        setIsOwnerOfLanguage(lang ? lang.isOwner : false)
         setPolls([])
         send({ type: 'language', data: { cmd: 'select', id } })
     }
 
-    const activeLanguage = languages.find((language) => language.id === activeLanguageId)
+    function findActiveLanguage(id = activeLanguageId) {
+        return languages.find((language) => language.id === id)
+    }
 
     return (
         <main className='container'>
@@ -188,11 +206,12 @@ function App() {
                             <p>{activeLanguage.description}</p>
                         </div>
                         <div className='language-actions'>
-                            <button className='quiet' onClick={() => { setActiveLanguageId(null); setPolls([]) }}>All languages</button>
+                            <button className='quiet' onClick={() => { setActiveLanguageId(null); setIsOwnerOfLanguage(false); setPolls([]) }}>All languages</button>
                             <button className='share-key' onClick={() => navigator.clipboard?.writeText(activeLanguage.key)}>Copy key</button>
                             <code>{activeLanguage.key}</code>
                         </div>
                     </div>
+                    <TranslationAPI_Details />
                     <TranslateWord />
                     <Polls />
                     <form className='create-panel' onSubmit={createPoll}>
@@ -220,9 +239,11 @@ createRoot(document.getElementById('root')).render(
     <StrictMode>
         <IPCProvider>
             <ActiveLanguageProvider>
-                <PollProvider>
-                    <App />
-                </PollProvider>
+                <TranslationAPI_Provider>
+                    <PollProvider>
+                        <App />
+                    </PollProvider>
+                </TranslationAPI_Provider>
             </ActiveLanguageProvider>
         </IPCProvider>
     </StrictMode>

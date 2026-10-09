@@ -1,14 +1,20 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import './styles.css'
 import { gTranslate } from './Translation/gTranslate'
+import { TranslationAPI_Context } from './Translation/TranslationAPI_Context'
+import { yTranslate } from './Translation/yTranslate'
 
 export function TranslateWord() {
     const [word, setWord] = useState('')
     const [translationG, setTranslationG] = useState('')
+    const [translationY, setTranslationY] = useState('')
+
+    const { yKey, yFolderID } = useContext(TranslationAPI_Context)
 
     const handleTranslate = () => {
         if (word.trim()) {
             setTranslationG(gTranslate(word))
+            setTranslationY(yTranslate(word, yKey, yFolderID))
         }
     }
 
@@ -26,7 +32,8 @@ export function TranslateWord() {
             </div>
             {translationG && (
                 <div className="translation-result">
-                    Google translate: {translationG}
+                    Google translate: {translationG}<br />
+                    Yandex translate: {translationY}
                 </div>
             )}
         </div>
