@@ -1,0 +1,16 @@
+* Translation of words - save in db
+* Search word for translation in saved words
+* Built in translation into buryat by open source app or AI model
+* Name, avatar of user
+* Pair other devices for the same user
+* Roles, administator of language can assign roles to others
+  * Administrator of language - can do anything in language
+  * Vote closer - can close votes
+  * Word creator - can add new words to translation database
+  * Banned to create vote
+  * Banned to comment
+* Comments on vote
+* Open last opened language
+* Study plans (Courses):
+  * Creation of exercises, steps
+  * Studying by student(user), progress, correct/wrong
