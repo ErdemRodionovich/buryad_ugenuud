@@ -35,7 +35,7 @@ function App() {
 
     const activeLanguage = findActiveLanguage()
 
-    const { setYKey, setYFolderID } = useContext(TranslationAPI_Context)
+    const { setYKey, setYFolderID, setGKey, setGProjectID } = useContext(TranslationAPI_Context)
 
     useEffect(() => {
         window.bridge.startWorker(workerSpecifier)
@@ -68,6 +68,8 @@ function App() {
             if (parsed?.type === 'translation-api-details') {
                 setYKey(parsed.data.yKey)
                 setYFolderID(parsed.data.yFolderID)
+                setGKey(parsed.data.gKey)
+                setGProjectID(parsed.data.gProjectID)
             }
         })
         const offExit = window.bridge.onWorkerExit(workerSpecifier, (code) => {

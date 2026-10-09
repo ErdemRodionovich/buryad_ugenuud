@@ -1,19 +1,19 @@
 import { useState, useContext } from 'react'
 import './styles.css'
 import { gTranslate } from './Translation/gTranslate'
-import { TranslationAPI_Context } from './Translation/TranslationAPI_Context'
 import { yTranslate } from './Translation/yTranslate'
+import { TranslationAPI_Context } from './Translation/TranslationAPI_Context'
 
 export function TranslateWord() {
     const [word, setWord] = useState('')
     const [translationG, setTranslationG] = useState('')
     const [translationY, setTranslationY] = useState('')
 
-    const { yKey, yFolderID } = useContext(TranslationAPI_Context)
+    const { yKey, yFolderID, gKey, gProjectID } = useContext(TranslationAPI_Context)
 
     const handleTranslate = () => {
         if (word.trim()) {
-            setTranslationG(gTranslate(word))
+            setTranslationG(gTranslate(word, gKey, gProjectID))
             setTranslationY(yTranslate(word, yKey, yFolderID))
         }
     }

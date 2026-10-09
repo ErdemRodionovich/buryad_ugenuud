@@ -24,6 +24,7 @@
     "install:fs-xattr": "cd node_modules/fs-xattr && node-gyp rebuild"
   },
   "dependencies": {
+    "@google-cloud/translate": "^10.2.0",
     "buryad-ugenuud-worker": "github:ErdemRodionovich/buryad_ugenuud_worker",
     "framed-stream": "^1.0.1",
     "hello-pear-worker": "^1.0.0",

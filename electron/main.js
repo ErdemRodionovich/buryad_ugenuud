@@ -6,6 +6,7 @@ const path = require('path')
 const fs = require('fs')
 const PearRuntime = require('pear-runtime')
 const FramedStream = require('framed-stream')
+import { Translate } from '@google-cloud/translate/build/src/v2'
 
 const { isMac, isLinux, isWindows } = require('which-runtime')
 const { command, flag } = require('paparam')
@@ -232,6 +233,19 @@ ipcMain.handle('yandex-translate', async (event, { text, apiKey, folderId, targe
     } else {
       throw Error('Received unsupported response from Yandex Translate: ' + JSON.stringify(data))
     }
+  } catch (error) {
+    console.error('Translation error:', error);
+    return 'Translation failed';
+  }
+});
+ipcMain.handle('google-translate', async (event, { text, apiKey, projectID, targetLang }) => {
+  try {
+    const translateClient = new Translate({
+      projectId: projectID,
+      key: apiKey
+    })
+    const [translation] = await translateClient.translate(text, targetLang)
+    return translation
   } catch (error) {
     console.error('Translation error:', error);
     return 'Translation failed';

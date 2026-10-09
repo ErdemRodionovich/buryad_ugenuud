@@ -37,5 +37,8 @@ contextBridge.exposeInMainWorld('bridge', {
   },
   yTranslate: (text, apiKey, folderId, targetLang) => {
     return ipcRenderer.invoke('yandex-translate', { text, apiKey, folderId, targetLang });
+  },
+  gTranslate: (text, apiKey, projectID, targetLang) => {
+    return ipcRenderer.invoke('google-translate', { text, apiKey, projectID, targetLang });
   }
 })
