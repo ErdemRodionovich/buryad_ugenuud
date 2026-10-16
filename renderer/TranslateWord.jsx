@@ -31,6 +31,17 @@ export function TranslateWord() {
         setTranslationY(yTranslate(w, yKey, yFolderID))
     }
 
+    function editTranslation(translationID) {
+        request({
+            type: 'translation',
+            data: {
+                cmd: 'get-for-edit',
+                translationID,
+                languageId: activeLanguageId
+            }
+        })
+    }
+
     return (
         <div className="translate-panel">
             <p className='eyebrow'>Translate</p>
@@ -45,12 +56,13 @@ export function TranslateWord() {
             </div>
             {translationG && (
                 <div className="translation-result">
-                    {foundTranslations.map((t) => (
-                        <div className='found-translation' key={t.translationID}>
+                    {foundTranslations.map((t, index) => (
+                        <div className='found-translation' key={index}>
                             <p>{t.language}</p>
                             <p>{t.translation}</p>
                             <p>{t.description}</p>
                             <MediaPreview media={t.media} />
+                            <button className='primary' onClick={() => editTranslation(t.translationID)}>Edit translation</button>
                         </div>
                     ))}
 

@@ -56,9 +56,26 @@ export function SaveTranslation() {
                 translations
             }
         })
+        resetTranslation()
+    }
+
+    function resetTranslation() {
         setWordsForTranslation([''])
         setTranslations([{ translation: '', description: '', media: [] }])
         setTranslationID('')
+    }
+
+    function removeWholeTranslation() {
+        request({
+            type: 'translation',
+            data: {
+                cmd: 'remove',
+                translationID,
+                languageId: activeLanguageId,
+                languageOfWordForTranslation
+            }
+        })
+        resetTranslation()
     }
 
     return (
@@ -151,6 +168,10 @@ export function SaveTranslation() {
             <button type='submit' className='primary'>
                 Save Translation
             </button>
+
+            {translationID !== '' && (
+                <button type='button' onClick={() => removeWholeTranslation()}>Remove whole translation</button>
+            )}
         </form>
     )
 }

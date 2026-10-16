@@ -39,8 +39,8 @@ function App() {
     const activeLanguage = findActiveLanguage()
 
     const { setYKey, setYFolderID, setGKey, setGProjectID } = useContext(TranslationAPI_Context)
-
     const { setFoundTranslations } = useContext(SearchTranslationContext)
+    const { setTranslationID, setLanguageOfWordForTranslation, setWordsForTranslation, setTranslations } = useContext(TranslationCreationContext)
 
     useEffect(() => {
         window.bridge.startWorker(workerSpecifier)
@@ -78,6 +78,12 @@ function App() {
             }
             if (parsed?.type === 'found-translations') {
                 setFoundTranslations(parsed.data)
+            }
+            if (parsed?.type === 'translation-for-edit') {
+                setTranslationID(parsed.data.translationID)
+                setTranslations(parsed.data.translations)
+                setLanguageOfWordForTranslation(parsed.data.languageOfWordForTranslation)
+                setWordsForTranslation(parsed.data.wordsForTranslation)
             }
         })
         const offExit = window.bridge.onWorkerExit(workerSpecifier, (code) => {
