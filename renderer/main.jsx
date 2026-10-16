@@ -9,6 +9,9 @@ import { MediaFields } from './Media'
 import { TranslateWord } from './TranslateWord'
 import { TranslationAPI_Context, TranslationAPI_Provider } from './Translation/TranslationAPI_Context'
 import { TranslationAPI_Details } from './Translation/TranslationAPI_Details'
+import { SaveTranslation } from './SaveTranslation'
+import { TranslationCreationContext, TranslationCreationProvider } from './TranslationCreationContext'
+import { SearchTranslationContext, SearchTranslationProvider } from './SearchTranslationContext'
 
 const decoder = new TextDecoder('utf-8')
 
@@ -36,6 +39,8 @@ function App() {
     const activeLanguage = findActiveLanguage()
 
     const { setYKey, setYFolderID, setGKey, setGProjectID } = useContext(TranslationAPI_Context)
+
+    const { setFoundTranslations } = useContext(SearchTranslationContext)
 
     useEffect(() => {
         window.bridge.startWorker(workerSpecifier)
@@ -70,6 +75,9 @@ function App() {
                 setYFolderID(parsed.data.yFolderID)
                 setGKey(parsed.data.gKey)
                 setGProjectID(parsed.data.gProjectID)
+            }
+            if (parsed?.type === 'found-translations') {
+                setFoundTranslations(parsed.data)
             }
         })
         const offExit = window.bridge.onWorkerExit(workerSpecifier, (code) => {
@@ -215,6 +223,7 @@ function App() {
                     </div>
                     <TranslationAPI_Details />
                     <TranslateWord />
+                    <SaveTranslation />
                     <Polls />
                     <form className='create-panel' onSubmit={createPoll}>
                         <div><p className='eyebrow'>New poll</p><h2>Ask the community</h2></div>
@@ -243,7 +252,11 @@ createRoot(document.getElementById('root')).render(
             <ActiveLanguageProvider>
                 <TranslationAPI_Provider>
                     <PollProvider>
-                        <App />
+                        <TranslationCreationProvider>
+                            <SearchTranslationProvider>
+                                <App />
+                            </SearchTranslationProvider>
+                        </TranslationCreationProvider>
                     </PollProvider>
                 </TranslationAPI_Provider>
             </ActiveLanguageProvider>
