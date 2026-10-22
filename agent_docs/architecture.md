@@ -39,8 +39,10 @@ The code is small — read it for the wiring; below are only the non-obvious fac
   `app-storage/` (suggested `pear.storage` for app data).
 - The user's nickname, avatar, and joined-language registry are stored in a
   per-user Autobase under `app-storage/user`. `app-storage/registry` keeps only
-  the local Autobase key pointer. Devices still need to be paired/authorized to
-  share and write to the same user Autobase; pairing is not implemented yet.
+  the local Autobase key pointer. Pairing uses signed, copy-paste JSON request
+  and approval codes; each expires after 24 hours. An already-paired device
+  approves the new device's writer key in the user Autobase. QR scanning and
+  device revocation are not implemented.
 - **A stall is usually the network, not the code, and the two look identical.** An
   update that never arrives, or a peer that never connects, most often means this
   machine is unreachable: `pear seed <link> --json` prints `firewalled` and

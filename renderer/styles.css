@@ -75,6 +75,60 @@ button:disabled {
     padding: 18px 22px;
 }
 
+.pairing-panel {
+    display: grid;
+    gap: 20px;
+    margin-top: 24px;
+    border-top: 3px solid #2c705b;
+    background: #fbfcf8;
+    padding: 22px;
+}
+
+.pairing-panel h2 {
+    margin-bottom: 8px;
+}
+
+.pairing-panel h3 {
+    margin: 0;
+    color: #1d4a3b;
+    font-size: 18px;
+}
+
+.pairing-panel p {
+    margin: 0;
+    color: #668073;
+    line-height: 1.45;
+}
+
+.pairing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.pairing-step {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    min-width: 0;
+    border-top: 1px solid #d8e3d9;
+    padding-top: 14px;
+}
+
+.pairing-step textarea {
+    font: 12px monospace;
+    overflow-wrap: anywhere;
+}
+
+.pairing-code {
+    display: grid;
+    gap: 8px;
+}
+
+.pairing-code small {
+    color: #789086;
+}
+
 .profile-summary {
     display: flex;
     align-items: center;
@@ -428,7 +482,8 @@ code {
     .create-panel,
     .language-forms,
     .profile-panel,
-    .profile-form {
+    .profile-form,
+    .pairing-grid {
         grid-template-columns: 1fr;
     }
 

@@ -7,6 +7,7 @@ import { IPCContext, IPCProvider } from './IPCContext'
 import { ActiveLanguageContext, ActiveLanguageProvider } from './ActiveLanguageContext'
 import { MediaFields } from './Media'
 import { Profile } from './Profile'
+import { Pairing } from './Pairing'
 import { TranslateWord } from './TranslateWord'
 import { TranslationAPI_Context, TranslationAPI_Provider } from './Translation/TranslationAPI_Context'
 import { TranslationAPI_Details } from './Translation/TranslationAPI_Details'
@@ -23,6 +24,9 @@ function App() {
     const [languages, setLanguages] = useState([])
     const [profile, setProfile] = useState({ nickname: '', avatar: null })
     const [profileLoaded, setProfileLoaded] = useState(false)
+    const [pairingStatus, setPairingStatus] = useState(null)
+    const [pairingRequestCode, setPairingRequestCode] = useState('')
+    const [pairingApprovalCode, setPairingApprovalCode] = useState('')
     const [languageName, setLanguageName] = useState('')
     const [languageDescription, setLanguageDescription] = useState('')
     const [joinKey, setJoinKey] = useState('')
@@ -77,6 +81,9 @@ function App() {
                 setProfile(parsed.data)
                 setProfileLoaded(true)
             }
+            if (parsed?.type === 'pairing-status') setPairingStatus(parsed.data)
+            if (parsed?.type === 'pairing-request') setPairingRequestCode(parsed.data)
+            if (parsed?.type === 'pairing-approval') setPairingApprovalCode(parsed.data)
             if (parsed?.type === 'translation-api-details') {
                 setYKey(parsed.data.yKey)
                 setYFolderID(parsed.data.yFolderID)
@@ -111,6 +118,7 @@ function App() {
 
     useEffect(() => {
         send({ type: 'profile', data: { cmd: 'get' } })
+        send({ type: 'pairing', data: { cmd: 'status' } })
         send({ type: 'language', data: { cmd: 'list' } })
     }, [])
 
@@ -188,6 +196,17 @@ function App() {
                 <Profile
                     profile={profile}
                     onSave={(data) => request({ type: 'profile', data: { cmd: 'save', ...data } })}
+                    onError={(error) => setNotice(error.message)}
+                />
+            )}
+            {pairingStatus && (
+                <Pairing
+                    status={pairingStatus}
+                    requestCode={pairingRequestCode}
+                    approvalCode={pairingApprovalCode}
+                    onCreateRequest={() => request({ type: 'pairing', data: { cmd: 'create-request' } })}
+                    onApprove={(code) => request({ type: 'pairing', data: { cmd: 'approve', code } })}
+                    onComplete={(code) => request({ type: 'pairing', data: { cmd: 'complete', code } })}
                     onError={(error) => setNotice(error.message)}
                 />
             )}
