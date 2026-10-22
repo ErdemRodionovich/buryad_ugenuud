@@ -6,6 +6,7 @@ import { Polls } from './Polls'
 import { IPCContext, IPCProvider } from './IPCContext'
 import { ActiveLanguageContext, ActiveLanguageProvider } from './ActiveLanguageContext'
 import { MediaFields } from './Media'
+import { Profile } from './Profile'
 import { TranslateWord } from './TranslateWord'
 import { TranslationAPI_Context, TranslationAPI_Provider } from './Translation/TranslationAPI_Context'
 import { TranslationAPI_Details } from './Translation/TranslationAPI_Details'
@@ -20,6 +21,8 @@ function App() {
     const [status, setStatus] = useState(`v${version}`)
     const [peerCount, setPeerCount] = useState(0)
     const [languages, setLanguages] = useState([])
+    const [profile, setProfile] = useState({ nickname: '', avatar: null })
+    const [profileLoaded, setProfileLoaded] = useState(false)
     const [languageName, setLanguageName] = useState('')
     const [languageDescription, setLanguageDescription] = useState('')
     const [joinKey, setJoinKey] = useState('')
@@ -70,6 +73,10 @@ function App() {
             if (parsed?.type === 'polls') setPolls(Object.values(parsed.data))
             if (parsed?.type === 'error') setNotice(parsed.data)
             if (parsed?.type === 'peers') setPeerCount(parsed.data)
+            if (parsed?.type === 'profile') {
+                setProfile(parsed.data)
+                setProfileLoaded(true)
+            }
             if (parsed?.type === 'translation-api-details') {
                 setYKey(parsed.data.yKey)
                 setYFolderID(parsed.data.yFolderID)
@@ -103,6 +110,7 @@ function App() {
     }, [])
 
     useEffect(() => {
+        send({ type: 'profile', data: { cmd: 'get' } })
         send({ type: 'language', data: { cmd: 'list' } })
     }, [])
 
@@ -176,6 +184,14 @@ function App() {
                     {peerCount} {peerCount === 1 ? 'peer' : 'peers'} connected · {status}
                 </span>
             </header>
+            {profileLoaded && (
+                <Profile
+                    profile={profile}
+                    onSave={(data) => request({ type: 'profile', data: { cmd: 'save', ...data } })}
+                    onError={(error) => setNotice(error.message)}
+                />
+            )}
+            {notice && <p className='notice' role='alert'>{notice}</p>}
             {updateReady && (
                 <button onClick={applyUpdate} disabled={updating}>
                     {updating ? 'Updating...' : 'Apply update'}
@@ -244,7 +260,6 @@ function App() {
                         <button type='button' onClick={() => setOptions((current) => [...current, { text: '', media: [] }])}>Add option</button>
                         <button className='primary' type='submit'>Publish poll</button>
                     </form>
-                    {notice && <p className='notice'>{notice}</p>}
                 </>
             )}
         </main>
