@@ -47,7 +47,10 @@ The code is small — read it for the wiring; below are only the non-obvious fac
   its key and available name, description, and creator metadata, so paired
   devices can show the language list before its language Autobase has
   replicated. `app-storage/registry` keeps the local Autobase key and storage
-  selection.
+  selection. Poll creator authority uses a shared signing keypair stored in the
+  user Autobase; the private key is replicated to paired devices. New poll
+  creation and close operations are signed so each paired device can act for
+  the same account creator.
   Pairing requests and approvals are signed and expire after 24 hours. A
   request includes a random rendezvous secret, but only its hash is appended
   to the user Autobase. When both devices are online, Hyperswarm establishes a

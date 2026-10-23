@@ -42,7 +42,7 @@ export function Polls() {
                                 </button>
                             ))}
                         </div>
-                        {!selectedPoll.closed && <button className='close-vote' onClick={() => request({ type: 'poll', data: { cmd: 'close', languageId: activeLanguageId, pollId: selectedPoll.id } })}>Close voting</button>}
+                        {!selectedPoll.closed && selectedPoll.canClose && <button className='close-vote' onClick={() => request({ type: 'poll', data: { cmd: 'close', languageId: activeLanguageId, pollId: selectedPoll.id } })}>Close voting</button>}
                     </>
                 ) : <p className='empty'>Select a poll to see the question and current results.</p>}
             </div>
