@@ -48,9 +48,13 @@ The code is small — read it for the wiring; below are only the non-obvious fac
   devices can show the language list before its language Autobase has
   replicated. `app-storage/registry` keeps the local Autobase key and storage
   selection.
-  Pairing uses signed, copy-paste JSON request and approval codes; each expires
-  after 24 hours. An already-paired device approves the new device's writer key
-  in the user Autobase. QR scanning and device revocation are not implemented.
+  Pairing requests and approvals are signed and expire after 24 hours. A
+  request includes a random rendezvous secret, but only its hash is appended
+  to the user Autobase. When both devices are online, Hyperswarm establishes a
+  Noise-encrypted connection and sends the signed approval directly. The signed
+  copy-paste approval remains available if the devices cannot connect. The
+  approver also authorizes the new device's writer in the user Autobase. QR
+  scanning and device revocation are not implemented.
 - **A stall is usually the network, not the code, and the two look identical.** An
   update that never arrives, or a peer that never connects, most often means this
   machine is unreachable: `pear seed <link> --json` prints `firewalled` and
@@ -59,3 +63,50 @@ The code is small — read it for the wiring; below are only the non-obvious fac
   logic, connect two bare Hyperswarm instances on a random topic with no app code —
   if that fails, nothing above it can work. Exercise real replication against a
   local `hyperdht/testnet` rather than the public DHT.
+
+## Direct device pairing sequence
+
+The request is transferred out of band (for example, as copied JSON). The direct
+Hyperswarm connection is used to deliver the approval; the signed approval can
+also be copied manually if the devices cannot connect.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant N as New device (requester)
+    participant DHT as Hyperswarm / DHT
+    participant O as Existing device (approver)
+    participant B as User Autobase
+
+    N->>N: Generate request ID, 24-hour expiry, device key and signing key
+    N->>N: Generate rendezvous secret sign request including its hash
+    N->>User: Display signed pairing request
+    User->>O: Transfer request (QR or copy-paste)
+
+    O->>O: Verify request signature and expiry confirm this device is authorized
+    O->>B: Append device-add authorization
+    B-->>O: New writer is authorized
+    O->>O: Create and sign approval persist it for recovery/fallback
+    O->>User: Keep signed approval available as fallback
+
+    N->>DHT: Join topic derived from rendezvous secret
+    O->>DHT: Join the same topic
+    DHT-->>N: Establish Hyperswarm connection
+    DHT-->>O: Establish Noise-encrypted connection
+
+    N->>O: Send signed request and rendezvous secret
+    O->>O: Verify it matches the approved request
+    O->>N: Send fresh challenge
+    N->>N: Sign challenge with device signing key
+    N->>O: Send signed proof
+    O->>O: Verify proof against request signing key
+    O->>N: Send signed approval
+
+    N->>N: Verify approval signature, device key, request ID and expiry
+    N->>B: Open approved user's Autobase
+    B-->>N: Replicate authorization and user data
+    N->>N: Confirm approver is authorized clear pending pairing state
+    N->>O: Send completion message
+    O->>O: Close temporary pairing session
+```

@@ -27,6 +27,7 @@ function App() {
     const [pairingStatus, setPairingStatus] = useState(null)
     const [pairingRequestCode, setPairingRequestCode] = useState('')
     const [pairingApprovalCode, setPairingApprovalCode] = useState('')
+    const [pairingConnectionStatuses, setPairingConnectionStatuses] = useState({})
     const [languageName, setLanguageName] = useState('')
     const [languageDescription, setLanguageDescription] = useState('')
     const [joinKey, setJoinKey] = useState('')
@@ -84,6 +85,12 @@ function App() {
             if (parsed?.type === 'pairing-status') setPairingStatus(parsed.data)
             if (parsed?.type === 'pairing-request') setPairingRequestCode(parsed.data)
             if (parsed?.type === 'pairing-approval') setPairingApprovalCode(parsed.data)
+            if (parsed?.type === 'pairing-connection-status') {
+                setPairingConnectionStatuses((current) => ({
+                    ...current,
+                    [parsed.data.requestId]: parsed.data.status
+                }))
+            }
             if (parsed?.type === 'translation-api-details') {
                 setYKey(parsed.data.yKey)
                 setYFolderID(parsed.data.yFolderID)
@@ -204,6 +211,7 @@ function App() {
                     status={pairingStatus}
                     requestCode={pairingRequestCode}
                     approvalCode={pairingApprovalCode}
+                    connectionStatuses={pairingConnectionStatuses}
                     onCreateRequest={() => request({ type: 'pairing', data: { cmd: 'create-request' } })}
                     onApprove={(code) => request({ type: 'pairing', data: { cmd: 'approve', code } })}
                     onComplete={(code) => request({ type: 'pairing', data: { cmd: 'complete', code } })}

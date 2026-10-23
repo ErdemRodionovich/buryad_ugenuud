@@ -4,7 +4,7 @@
 * V - Name, avatar of user
   * HEIC support
   * shrink photo till 2 Mb if it is bigger
-* Pair other devices for the same user
+* V - Pair other devices for the same user (signed 24-hour request/approval, direct encrypted transfer with copy-paste fallback)
 * Roles, administator of language can assign roles to others
   * Administrator of language - can do anything in language
   * Vote closer - can close votes
