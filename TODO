@@ -2,8 +2,8 @@
 * V - Search word for translation in saved words
 * Built in translation into buryat by open source app or AI model
 * V - Name, avatar of user
-  * HEIC support
-  * shrink photo till 2 Mb if it is bigger
+  * V - HEIC support
+  * V - shrink photo till 2 Mb if it is bigger
 * V - Pair other devices for the same user (signed 24-hour request/approval, direct encrypted transfer with copy-paste fallback)
 * Roles, administator of language can assign roles to others
   * Administrator of language - can do anything in language

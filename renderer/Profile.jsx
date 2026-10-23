@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 const maxAvatarBytes = 2 * 1024 * 1024
 const supportedAvatarTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif'])
+const heicExtensions = /\.(heic|heif)$/i
 
 function bytesToBase64(buffer) {
   const bytes = new Uint8Array(buffer)
@@ -10,6 +11,73 @@ function bytesToBase64(buffer) {
     binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000))
   }
   return btoa(binary)
+}
+
+function isHeic(file) {
+  return file.type === 'image/heic' || file.type === 'image/heif' || heicExtensions.test(file.name)
+}
+
+function canvasToJpeg(canvas, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error('Could not compress avatar image'))
+      },
+      'image/jpeg',
+      quality
+    )
+  })
+}
+
+async function prepareAvatar(file) {
+  const convertHeic = isHeic(file)
+  let image = file
+
+  if (convertHeic) {
+    const { heicTo } = await import('heic-to')
+    image = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.9 })
+    if (!image) throw new Error('Could not convert HEIC avatar to JPEG')
+  }
+
+  if (!convertHeic && file.size <= maxAvatarBytes) {
+    return { data: bytesToBase64(await file.arrayBuffer()), mime: file.type }
+  }
+
+  const bitmap = await window.createImageBitmap(image)
+  try {
+    let width = bitmap.width
+    let height = bitmap.height
+    let quality = 0.9
+
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const canvas = window.document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const context = canvas.getContext('2d')
+      if (!context) throw new Error('Could not process avatar image')
+      context.fillStyle = '#fff'
+      context.fillRect(0, 0, width, height)
+      context.drawImage(bitmap, 0, 0, width, height)
+
+      const compressed = await canvasToJpeg(canvas, quality)
+      if (compressed.size <= maxAvatarBytes) {
+        return { data: bytesToBase64(await compressed.arrayBuffer()), mime: 'image/jpeg' }
+      }
+
+      if (quality > 0.5) {
+        quality = Math.max(0.5, quality - 0.1)
+      } else {
+        width = Math.max(1, Math.floor(width * 0.8))
+        height = Math.max(1, Math.floor(height * 0.8))
+        quality = 0.9
+      }
+    }
+  } finally {
+    bitmap.close()
+  }
+
+  throw new Error('Could not compress avatar image to 2 MB or smaller')
 }
 
 function avatarSource(avatar) {
@@ -30,11 +98,11 @@ export function Profile({ profile, onSave, onError }) {
     if (!file) return
 
     try {
-      if (!supportedAvatarTypes.has(file.type)) {
-        throw new Error('Choose a PNG, JPEG, WebP, or GIF image')
+      const heic = isHeic(file)
+      if (!heic && !supportedAvatarTypes.has(file.type)) {
+        throw new Error('Choose a PNG, JPEG, WebP, GIF, or HEIC image')
       }
-      if (file.size > maxAvatarBytes) throw new Error('Avatar must be 2 MB or smaller')
-      setAvatar({ data: bytesToBase64(await file.arrayBuffer()), mime: file.type })
+      setAvatar(await prepareAvatar(file))
     } catch (error) {
       onError(error)
       event.target.value = ''
@@ -76,10 +144,10 @@ export function Profile({ profile, onSave, onError }) {
           Avatar
           <input
             type='file'
-            accept='image/png,image/jpeg,image/webp,image/gif'
+            accept='image/png,image/jpeg,image/webp,image/gif,image/heic,image/heif,.heic,.heif'
             onChange={selectAvatar}
           />
-          <small>PNG, JPEG, WebP, or GIF; 2 MB maximum.</small>
+          <small>PNG, JPEG, WebP, GIF, or HEIC; images are compressed to 2 MB maximum.</small>
         </label>
         <div className='profile-avatar-actions'>
           {avatar && (
