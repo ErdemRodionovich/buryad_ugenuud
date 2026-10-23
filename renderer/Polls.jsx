@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react'
+import { useContext } from 'react'
 import './styles.css'
 import { IPCContext } from './IPCContext'
 import { PollContext } from './PollContext'
@@ -10,7 +10,7 @@ function pollText(value) {
 }
 
 export function Polls() {
-    const { polls, setPolls, selectedPollId, setSelectedPollId, refresh } = useContext(PollContext)
+    const { polls, selectedPollId, setSelectedPollId, refresh } = useContext(PollContext)
     const { request } = useContext(IPCContext)
     const { activeLanguageId } = useContext(ActiveLanguageContext)
 
@@ -31,12 +31,12 @@ export function Polls() {
             <div className='poll-detail'>
                 {selectedPoll ? (
                     <>
-                        <p className='eyebrow'>{selectedPoll.closed ? 'Voting closed' : 'Cast your vote'}</p>
+                        <p className='eyebrow'>{selectedPoll.closed ? 'Voting closed' : selectedPoll.hasVoted ? 'You have voted' : 'Cast your vote'}</p>
                         <h2>{pollText(selectedPoll.question)}</h2>
                         <MediaPreview media={selectedPoll.questionMedia} />
                         <div className='options'>
                             {selectedPoll.options.map((option, index) => (
-                                <button key={index} disabled={selectedPoll.closed} onClick={() => request({ type: 'poll', data: { cmd: 'vote', languageId: activeLanguageId, pollId: selectedPoll.id, optionIndex: index } })}>
+                                <button key={index} disabled={selectedPoll.closed || selectedPoll.hasVoted} onClick={() => request({ type: 'poll', data: { cmd: 'vote', languageId: activeLanguageId, pollId: selectedPoll.id, optionIndex: index } })}>
                                     <span>{pollText(option)}<MediaPreview media={option.media} /></span>
                                     <b>{selectedPoll.votes?.[index] || 0}</b>
                                 </button>
