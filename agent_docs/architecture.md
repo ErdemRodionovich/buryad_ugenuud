@@ -38,11 +38,19 @@ The code is small — read it for the wiring; below are only the non-obvious fac
   `pear-runtime/next/<length>.<fork>/` (wiped on every updates-enabled launch),
   `app-storage/` (suggested `pear.storage` for app data).
 - The user's nickname, avatar, and joined-language registry are stored in a
-  per-user Autobase under `app-storage/user`. `app-storage/registry` keeps only
-  the local Autobase key pointer. Pairing uses signed, copy-paste JSON request
-  and approval codes; each expires after 24 hours. An already-paired device
-  approves the new device's writer key in the user Autobase. QR scanning and
-  device revocation are not implemented.
+  per-user Autobase. `app-storage/user` holds the stable local device keypair;
+  the first device keeps its initial user base there, while a paired user's
+  base is stored in a separate Corestore at
+  `app-storage/user-bases/<user-key>`. The stable writer keypair remains in
+  `app-storage/user`, and separate stores prevent named-view collisions without
+  changing the paired base's view naming. Each joined-language record includes
+  its key and available name, description, and creator metadata, so paired
+  devices can show the language list before its language Autobase has
+  replicated. `app-storage/registry` keeps the local Autobase key and storage
+  selection.
+  Pairing uses signed, copy-paste JSON request and approval codes; each expires
+  after 24 hours. An already-paired device approves the new device's writer key
+  in the user Autobase. QR scanning and device revocation are not implemented.
 - **A stall is usually the network, not the code, and the two look identical.** An
   update that never arrives, or a peer that never connects, most often means this
   machine is unreachable: `pear seed <link> --json` prints `firewalled` and
