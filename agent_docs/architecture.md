@@ -55,6 +55,14 @@ The code is small — read it for the wiring; below are only the non-obvious fac
   are signed and revalidated during deterministic replay. A language's creator
   account is the initial administrator. Comments are not implemented yet, so
   the ban-comment role is stored but has no comment action to restrict.
+  Each language Autobase also stores signed nickname/avatar snapshots for its
+  joined accounts. The user Autobase stores avatars up to 2 MiB and the
+  language snapshot is separately compressed to 80 KiB; poll creator labels use
+  the snapshot stored in that language. Membership is recorded on explicit
+  language creation/join and refreshed in joined languages whenever the profile
+  is saved; opening an existing language does not append a membership record.
+  The joined-member list is sent to language administrators only; poll responses
+  include only the creator's matching snapshot.
   Pairing requests and approvals are signed and expire after 24 hours. A
   request includes a random rendezvous secret, but only its hash is appended
   to the user Autobase. When both devices are online, Hyperswarm establishes a
