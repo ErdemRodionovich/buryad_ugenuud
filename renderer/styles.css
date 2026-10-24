@@ -730,6 +730,30 @@ h2 {
   margin-bottom: 0;
 }
 
+.translation-poll-fields {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 10px;
+}
+
+.translation-poll-fields label {
+  display: grid;
+  gap: 6px;
+}
+
+.translation-poll-word {
+  display: flex;
+  gap: 10px;
+}
+
+.translation-poll-word input {
+  flex: 1;
+}
+
+.translation-poll-prompt {
+  color: #668073;
+}
+
 input,
 select {
   box-sizing: border-box;

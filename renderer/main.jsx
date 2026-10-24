@@ -22,6 +22,7 @@ import {
   TranslationCreationProvider
 } from './TranslationCreationContext'
 import { SearchTranslationContext, SearchTranslationProvider } from './SearchTranslationContext'
+import { ISO_languages } from './ISO_languages'
 
 const decoder = new TextDecoder('utf-8')
 
@@ -52,6 +53,9 @@ function App() {
     { text: '', media: [] },
     { text: '', media: [] }
   ])
+  const [pollKind, setPollKind] = useState('standard')
+  const [translationPoll, setTranslationPoll] = useState({ language: '', words: [''] })
+  const createPollPanel = useRef(null)
 
   const [updateReady, setUpdateReady] = useState(false)
   const [updating, setUpdating] = useState(false)
@@ -221,7 +225,20 @@ function App() {
       data: {
         cmd: 'create',
         languageId: activeLanguageId,
-        poll: { question: question.text, questionMedia: question.media, options }
+        poll: {
+          question: question.text,
+          questionMedia: question.media,
+          options,
+          kind: pollKind,
+          ...(pollKind === 'translation'
+            ? {
+                translationDetails: {
+                  languageOfWordForTranslation: translationPoll.language,
+                  wordsForTranslation: translationPoll.words
+                }
+              }
+            : {})
+        }
       }
     })
     resetRefresher()
@@ -230,6 +247,38 @@ function App() {
       { text: '', media: [] },
       { text: '', media: [] }
     ])
+    setPollKind('standard')
+    setTranslationPoll({ language: '', words: [''] })
+  }
+
+  function suggestTranslation({ word, sourceLanguage, translations: suggestions }) {
+    const cleanWord = word.trim()
+    if (!cleanWord) return
+    const translationOptions = [...new Set(suggestions.map((item) => item.trim()).filter(Boolean))]
+      .slice(0, 10)
+      .map((text) => ({ text, media: [] }))
+    while (translationOptions.length < 2) {
+      translationOptions.push({ text: '', media: [] })
+    }
+    setPollKind('translation')
+    setQuestion({ text: `Suggest a translation for: ${cleanWord}`, media: [] })
+    setOptions(translationOptions)
+    setTranslationPoll({ language: sourceLanguage, words: [cleanWord] })
+    requestAnimationFrame(() => createPollPanel.current?.scrollIntoView({ behavior: 'smooth' }))
+  }
+
+  function makeTranslation(poll, option) {
+    setTranslationID('')
+    setLanguageOfWordForTranslation(poll.translationDetails.languageOfWordForTranslation)
+    setWordsForTranslation([...poll.translationDetails.wordsForTranslation])
+    setTranslations([
+      {
+        translation: typeof option === 'string' ? option : option?.text || '',
+        description: '',
+        media: []
+      }
+    ])
+    setPage('add-translation')
   }
 
   function createLanguage(event) {
@@ -592,18 +641,101 @@ function App() {
                     <code>{activeLanguage.key}</code>
                   </div>
                 </div>
-                <TranslateWord canEdit={canCreateWords} />
+                <TranslateWord
+                  canEdit={canCreateWords}
+                  canSuggest={canCreatePolls}
+                  onSuggestTranslation={suggestTranslation}
+                />
                 <Polls
                   canComment={canManageLanguage || !currentRoles.includes('banned-comment')}
                   canManageLanguage={canManageLanguage}
+                  canMakeTranslation={canCreateWords}
+                  onMakeTranslation={makeTranslation}
                   onOpenUser={setSelectedUser}
                 />
                 {canCreatePolls && (
-                  <form className='create-panel' onSubmit={createPoll}>
+                  <form className='create-panel' onSubmit={createPoll} ref={createPollPanel}>
                     <div>
                       <p className='eyebrow'>New poll</p>
                       <h2>Ask the community</h2>
                     </div>
+                    <select
+                      value={pollKind}
+                      onChange={(event) => setPollKind(event.target.value)}
+                      aria-label='Poll kind'
+                    >
+                      <option value='standard'>Standard poll</option>
+                      <option value='translation'>Translation poll</option>
+                    </select>
+                    {pollKind === 'translation' && (
+                      <div className='translation-poll-fields'>
+                        <label>
+                          Source language
+                          <select
+                            value={translationPoll.language}
+                            onChange={(event) =>
+                              setTranslationPoll((current) => ({
+                                ...current,
+                                language: event.target.value
+                              }))
+                            }
+                            required
+                          >
+                            <option value='' disabled>
+                              Select source language
+                            </option>
+                            {ISO_languages().map(({ code, name }) => (
+                              <option key={code} value={code}>
+                                {name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        {translationPoll.words.map((word, index) => (
+                          <div className='translation-poll-word' key={index}>
+                            <input
+                              value={word}
+                              onChange={(event) =>
+                                setTranslationPoll((current) => ({
+                                  ...current,
+                                  words: current.words.map((item, itemIndex) =>
+                                    itemIndex === index ? event.target.value : item
+                                  )
+                                }))
+                              }
+                              placeholder='Word to translate'
+                              required
+                            />
+                            {index > 0 && (
+                              <button
+                                type='button'
+                                onClick={() =>
+                                  setTranslationPoll((current) => ({
+                                    ...current,
+                                    words: current.words.filter(
+                                      (_, itemIndex) => itemIndex !== index
+                                    )
+                                  }))
+                                }
+                              >
+                                Remove word
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button
+                          type='button'
+                          onClick={() =>
+                            setTranslationPoll((current) => ({
+                              ...current,
+                              words: [...current.words, '']
+                            }))
+                          }
+                        >
+                          Add another word
+                        </button>
+                      </div>
+                    )}
                     <input
                       value={question.text}
                       onChange={(event) =>

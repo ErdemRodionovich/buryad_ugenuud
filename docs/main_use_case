@@ -5,7 +5,8 @@ Then languages screen opens. If user already had opened some language before, th
   * translate panel where user can search for translations
   * open conversations
   * selected poll
-  * creation of new poll
+  * creation of standard and translation polls
+  * translation polls can be suggested from searched words and their winning option can prefill a new translation
 
 
 There is a menu with entries:

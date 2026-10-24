@@ -14,7 +14,13 @@ function pollText(value) {
   return typeof value === 'string' ? value : value?.text || ''
 }
 
-export function Polls({ canComment, canManageLanguage, onOpenUser }) {
+export function Polls({
+  canComment,
+  canManageLanguage,
+  canMakeTranslation,
+  onMakeTranslation,
+  onOpenUser
+}) {
   const { polls, commentsByPoll, selectedPollId, setSelectedPollId, refresh } =
     useContext(PollContext)
   const { request, setNotice } = useContext(IPCContext)
@@ -31,6 +37,15 @@ export function Polls({ canComment, canManageLanguage, onOpenUser }) {
   const comments = selectedPoll
     ? commentsByPoll[`${activeLanguageId}/${selectedPoll.id}`] || []
     : []
+  const winningTranslationOption = (() => {
+    if (selectedPoll?.kind !== 'translation' || !selectedPoll.closed) return null
+    const counts = selectedPoll.options.map((_, index) => selectedPoll.votes?.[index] || 0)
+    const highestCount = Math.max(...counts, 0)
+    if (highestCount === 0 || counts.filter((count) => count === highestCount).length !== 1) {
+      return null
+    }
+    return selectedPoll.options[counts.indexOf(highestCount)]
+  })()
 
   useEffect(() => {
     if (!activeLanguageId || !selectedPoll) return
@@ -115,6 +130,7 @@ export function Polls({ canComment, canManageLanguage, onOpenUser }) {
           >
             <strong>{pollText(poll.question)}</strong>
             <span>
+              {poll.kind === 'translation' ? 'Translation poll · ' : ''}
               {poll.closed ? 'Closed' : 'Open'} ·{' '}
               {Object.values(poll.votes || {}).reduce((sum, count) => sum + count, 0)} votes
             </span>
@@ -125,6 +141,7 @@ export function Polls({ canComment, canManageLanguage, onOpenUser }) {
         {selectedPoll ? (
           <>
             <p className='eyebrow'>
+              {selectedPoll.kind === 'translation' ? 'Translation poll · ' : ''}
               {selectedPoll.closed
                 ? 'Voting closed'
                 : selectedPoll.hasVoted
@@ -132,6 +149,12 @@ export function Polls({ canComment, canManageLanguage, onOpenUser }) {
                   : 'Cast your vote'}
             </p>
             <h2>{pollText(selectedPoll.question)}</h2>
+            {selectedPoll.kind === 'translation' && selectedPoll.translationDetails && (
+              <p className='translation-poll-prompt'>
+                Translate from {selectedPoll.translationDetails.languageOfWordForTranslation}:{' '}
+                {selectedPoll.translationDetails.wordsForTranslation.join(', ')}
+              </p>
+            )}
             <div className='poll-creator'>
               <span className='eyebrow'>Created by</span>
               <UserIdentity
@@ -167,6 +190,14 @@ export function Polls({ canComment, canManageLanguage, onOpenUser }) {
                 </button>
               ))}
             </div>
+            {canMakeTranslation && winningTranslationOption && selectedPoll.translationDetails && (
+              <button
+                className='primary'
+                onClick={() => onMakeTranslation(selectedPoll, winningTranslationOption)}
+              >
+                Make translation
+              </button>
+            )}
             {!selectedPoll.closed && selectedPoll.canClose && (
               <button
                 className='close-vote'

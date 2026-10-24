@@ -5,7 +5,7 @@
   * V - HEIC support
   * V - shrink photo till 2 Mb if it is bigger
 * V - Pair other devices for the same user (signed 24-hour request/approval, direct encrypted transfer with copy-paste fallback)
-* Roles, administator of language can assign roles to others
+* V - Roles, administator of language can assign roles to others
   * V - Administrator of language - can do anything in language
   * V - Vote closer - can close votes
   * V - Word creator - can add new words to translation database
@@ -20,8 +20,11 @@
   * Studying by student(user), progress, correct/wrong
 * Translation API details does not show up for newly created language, due to isOwner is false. why? debug.
 * Kinds of polls: translation poll
+  * "Suggest translation" button in search translation panel, this button creates new translation poll for searched word
 * Control panel for paired devices: revoke device - close access
 * rearrange UI, pages, initial setup, menu, styling
 * Burlang API
 * i18n
 * language's code from translation api details
+* polls pagination, filters
+* E2E tests
