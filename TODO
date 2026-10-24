@@ -11,9 +11,9 @@
   * V - Word creator - can add new words to translation database
   * V - Banned to create vote
   * V - Banned to comment
-  * Admin's panel
-  * User's panel with buttons "Change roles" for admin
-* Comments in poll
+  * V - Admin's panel
+  * V - User page opens from clickable nickname/avatar; admins can grant or remove roles
+* V - Comments in poll
 * Open last opened language
 * Study plans (Courses):
   * Creation of exercises, steps
@@ -22,3 +22,4 @@
 * Kinds of polls: translation poll
 * Control panel for paired devices: revoke device - close access
 * rearrange UI, pages, initial setup, menu, styling
+* Burlang API

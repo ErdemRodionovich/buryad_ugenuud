@@ -7,9 +7,9 @@ import { IPCContext, IPCProvider } from './IPCContext'
 import { ActiveLanguageContext, ActiveLanguageProvider } from './ActiveLanguageContext'
 import { MediaFields } from './Media'
 import { Profile } from './Profile'
-import { UserIdentity } from './UserIdentity'
 import { Pairing } from './Pairing'
 import { LanguageRoles } from './LanguageRoles'
+import { UserPage } from './UserPage'
 import { TranslateWord } from './TranslateWord'
 import {
   TranslationAPI_Context,
@@ -37,6 +37,7 @@ function App() {
   const [accountKey, setAccountKey] = useState(null)
   const [profile, setProfile] = useState({ nickname: '', avatar: null })
   const [profileLoaded, setProfileLoaded] = useState(false)
+  const [selectedUser, setSelectedUser] = useState(null)
   const [pairingStatus, setPairingStatus] = useState(null)
   const [pairingRequestCode, setPairingRequestCode] = useState('')
   const [pairingApprovalCode, setPairingApprovalCode] = useState('')
@@ -256,20 +257,24 @@ function App() {
       <header className='topbar'>
         <div>
           <p className='eyebrow'>Buryad Ugenuud</p>
-          <h1>{updateReady ? 'Update ready!' : activeLanguage?.name || 'Language library'}</h1>
+          <h1>
+            {updateReady
+              ? 'Update ready!'
+              : selectedUser?.nickname || activeLanguage?.name || 'Language library'}
+          </h1>
         </div>
         <span className='status'>
           {peerCount} {peerCount === 1 ? 'peer' : 'peers'} connected · {status}
         </span>
       </header>
-      {profileLoaded && (
+      {!selectedUser && profileLoaded && (
         <Profile
           profile={profile}
           onSave={(data) => request({ type: 'profile', data: { cmd: 'save', ...data } })}
           onError={(error) => setNotice(error.message)}
         />
       )}
-      {pairingStatus && (
+      {!selectedUser && pairingStatus && (
         <Pairing
           status={pairingStatus}
           requestCode={pairingRequestCode}
@@ -291,7 +296,25 @@ function App() {
           {updating ? 'Updating...' : 'Apply update'}
         </button>
       )}
-      {!activeLanguage ? (
+      {selectedUser ? (
+        <UserPage
+          user={selectedUser}
+          canManage={canManageLanguage}
+          roles={
+            canManageLanguage && rolesLanguageId === activeLanguageId
+              ? languageRoles.find((user) => user.userKey.toLowerCase() === selectedUser.userKey)
+                  ?.roles || []
+              : []
+          }
+          onBack={() => setSelectedUser(null)}
+          onRoleChange={(target, role, enabled) =>
+            request({
+              type: 'language',
+              data: { cmd: 'set-role', languageId: activeLanguageId, target, role, enabled }
+            })
+          }
+        />
+      ) : !activeLanguage ? (
         <section className='language-home'>
           <div className='language-intro'>
             <p className='eyebrow'>Shared study spaces</p>
@@ -383,7 +406,9 @@ function App() {
           <LanguageRoles
             accountKey={rolesLanguageId === activeLanguageId ? accountKey : null}
             canManage={canManageLanguage}
+            members={membersLanguageId === activeLanguageId ? languageMembers : []}
             roles={rolesLanguageId === activeLanguageId ? languageRoles : []}
+            onOpenUser={setSelectedUser}
             onAssign={(target, role, enabled) =>
               request({
                 type: 'language',
@@ -391,31 +416,12 @@ function App() {
               })
             }
           />
-          {canManageLanguage && (
-            <section className='language-members'>
-              <div className='section-heading'>
-                <h2>Joined users</h2>
-                <span>{membersLanguageId === activeLanguageId ? languageMembers.length : 0}</span>
-              </div>
-              {membersLanguageId === activeLanguageId && languageMembers.length > 0 ? (
-                <div className='member-list'>
-                  {languageMembers.map((member) => (
-                    <UserIdentity
-                      key={member.accountKey}
-                      nickname={member.nickname}
-                      avatar={member.avatar}
-                      joinedAt={member.joinedAt}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className='empty'>No joined users have been recorded yet.</p>
-              )}
-            </section>
-          )}
           <TranslateWord canEdit={canCreateWords} />
           {canCreateWords && <SaveTranslation />}
-          <Polls canComment={canManageLanguage || !currentRoles.includes('banned-comment')} />
+          <Polls
+            canComment={canManageLanguage || !currentRoles.includes('banned-comment')}
+            onOpenUser={setSelectedUser}
+          />
           {canCreatePolls && (
             <form className='create-panel' onSubmit={createPoll}>
               <div>

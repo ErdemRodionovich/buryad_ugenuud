@@ -14,7 +14,7 @@ function pollText(value) {
   return typeof value === 'string' ? value : value?.text || ''
 }
 
-export function Polls({ canComment }) {
+export function Polls({ canComment, onOpenUser }) {
   const { polls, commentsByPoll, selectedPollId, setSelectedPollId, refresh } =
     useContext(PollContext)
   const { request, setNotice } = useContext(IPCContext)
@@ -126,6 +126,7 @@ export function Polls({ canComment }) {
                 nickname={selectedPoll.creatorProfile?.nickname}
                 avatar={selectedPoll.creatorProfile?.avatar}
                 fallbackKey={selectedPoll.creator}
+                onOpenUser={onOpenUser}
               />
             </div>
             <MediaPreview media={selectedPoll.questionMedia} />
@@ -197,6 +198,7 @@ export function Polls({ canComment }) {
                           nickname={comment.authorProfile?.nickname}
                           avatar={comment.authorProfile?.avatar}
                           fallbackKey={comment.author}
+                          onOpenUser={onOpenUser}
                         />
                         <time dateTime={new Date(comment.createdAt).toISOString()}>
                           {new Date(comment.createdAt).toLocaleString()}
