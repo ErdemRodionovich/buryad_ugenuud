@@ -56,9 +56,11 @@ The code is small — read it for the wiring; below are only the non-obvious fac
   account is the initial administrator. Poll comments are signed by the shared
   account key and stored in the language Autobase under the poll's comment
   thread. Comment events are validated during replay, including the ban-comment
-  role, and carry text plus optional media. Comment reactions are also signed,
-  replay-validated against the shared Unicode emoji dataset, and stored per
-  comment, emoji, and account. The comment and reaction pickers use the same
+  role, and carry text plus optional media. Comment removals are signed by a
+  language administrator and replay-validated before the comment and its
+  reactions are deleted. Comment reactions are also signed, replay-validated
+  against the shared Unicode emoji dataset, and stored per comment, emoji, and
+  account. The comment and reaction pickers use the same
   grouped emoji data, including multi-codepoint sequences and skin-tone
   variants. Comment author labels use the signed member snapshot stored in that
   language.

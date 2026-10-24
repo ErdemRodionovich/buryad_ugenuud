@@ -420,6 +420,7 @@ function App() {
           {canCreateWords && <SaveTranslation />}
           <Polls
             canComment={canManageLanguage || !currentRoles.includes('banned-comment')}
+            canManageLanguage={canManageLanguage}
             onOpenUser={setSelectedUser}
           />
           {canCreatePolls && (

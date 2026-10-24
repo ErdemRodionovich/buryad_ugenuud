@@ -14,7 +14,7 @@ function pollText(value) {
   return typeof value === 'string' ? value : value?.text || ''
 }
 
-export function Polls({ canComment, onOpenUser }) {
+export function Polls({ canComment, canManageLanguage, onOpenUser }) {
   const { polls, commentsByPoll, selectedPollId, setSelectedPollId, refresh } =
     useContext(PollContext)
   const { request, setNotice } = useContext(IPCContext)
@@ -81,6 +81,18 @@ export function Polls({ canComment, onOpenUser }) {
         commentId: comment.commentId,
         emoji,
         enabled
+      }
+    })
+  }
+
+  function removeComment(comment) {
+    request({
+      type: 'comment',
+      data: {
+        cmd: 'remove',
+        languageId: activeLanguageId,
+        pollId: selectedPoll.id,
+        commentId: comment.commentId
       }
     })
   }
@@ -247,6 +259,15 @@ export function Polls({ canComment, onOpenUser }) {
                             </Suspense>
                           )}
                         </div>
+                        {canManageLanguage && (
+                          <button
+                            className='quiet'
+                            type='button'
+                            onClick={() => removeComment(comment)}
+                          >
+                            Remove comment
+                          </button>
+                        )}
                       </div>
                     </article>
                   ))}
