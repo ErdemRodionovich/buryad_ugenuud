@@ -84,6 +84,85 @@ button:disabled {
   padding: 22px;
 }
 
+.welcome-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+  border-top: 3px solid #2c705b;
+  background: #fbfcf8;
+  padding: 22px;
+}
+
+.welcome-panel > p:not(.eyebrow) {
+  max-width: 620px;
+  margin: 0;
+  color: #668073;
+  line-height: 1.5;
+}
+
+.welcome-actions,
+.app-menu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.route-content.hidden {
+  display: none;
+}
+
+.app-menu {
+  margin-top: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #c6d5ca;
+}
+
+.app-menu button {
+  padding: 9px 12px;
+  color: #668073;
+  font-size: 14px;
+}
+
+.app-menu button:hover,
+.app-menu button.active {
+  background: #d8e3d9;
+  color: #1d4a3b;
+}
+
+.paired-devices {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid #d8e3d9;
+  padding-top: 16px;
+}
+
+.paired-devices h3 {
+  margin: 0;
+  color: #1d4a3b;
+  font-size: 16px;
+}
+
+.paired-devices ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paired-devices li {
+  display: grid;
+  gap: 4px;
+  border-top: 1px solid #e2eae2;
+  padding: 10px 0;
+}
+
+.paired-devices li span {
+  color: #789086;
+  font-size: 12px;
+}
+
 .pairing-panel h2 {
   margin-bottom: 8px;
 }

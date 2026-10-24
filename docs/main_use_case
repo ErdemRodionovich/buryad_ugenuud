@@ -1,0 +1,18 @@
+Main use case:
+Welcome screen opens: user sets his profile or pairs this device to his profile. Once profile is set up, welcome window does not show up till "Log out".
+Then languages screen opens. If user already had opened some language before, then that language opens. On language's screen user can see:
+  * language's panel with it's key
+  * translate panel where user can search for translations
+  * open conversations
+  * selected poll
+  * creation of new poll
+
+
+There is a menu with entries:
+  * Profile - opens user's profile screen where user can change nickname and avatar
+  * Pairing - opens pairing screen where user can see list of paired devices, and can pair new device, revoke access for already paired device (revoke TBD)
+  * Languages - opens screen with list of languages (Your languages), where user can join new language or create new own one
+  * Translation API details (If language is open, activeLanguageId is set, and user is admin in opened language) - opens screen for translation API details, where user can see and edit these details
+  * Language members (If language is open, activeLanguageId is set, and user is admin in opened language) - where user can see list of members and grant or remove roles for members
+  * Add new translation (If language is open, activeLanguageId is set, and user has role "word creator") - where user can create new translation
+  * Log out - where user's profile is removed from this device (TBD)

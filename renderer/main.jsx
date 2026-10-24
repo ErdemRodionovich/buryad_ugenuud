@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useState, useContext } from 'react'
+import { StrictMode, useEffect, useState, useContext, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 import { PollContext, PollProvider } from './PollContext'
@@ -37,6 +37,7 @@ function App() {
   const [accountKey, setAccountKey] = useState(null)
   const [profile, setProfile] = useState({ nickname: '', avatar: null })
   const [profileLoaded, setProfileLoaded] = useState(false)
+  const [page, setPage] = useState('languages')
   const [selectedUser, setSelectedUser] = useState(null)
   const [pairingStatus, setPairingStatus] = useState(null)
   const [pairingRequestCode, setPairingRequestCode] = useState('')
@@ -57,8 +58,10 @@ function App() {
   const { workerSpecifier, send, request, notice, setNotice } = useContext(IPCContext)
   const { activeLanguageId, setActiveLanguageId, setIsOwnerOfLanguage } =
     useContext(ActiveLanguageContext)
-  const { setPolls, setCommentsByPoll, resetRefresher, clearRefresherTimeout } =
+  const { setPolls, setCommentsByPoll, setSelectedPollId, resetRefresher, clearRefresherTimeout } =
     useContext(PollContext)
+  const activeLanguageIdRef = useRef(activeLanguageId)
+  activeLanguageIdRef.current = activeLanguageId
 
   const activeLanguage = findActiveLanguage()
   const currentRoles =
@@ -99,7 +102,7 @@ function App() {
       }
       if (parsed?.type === 'languages') {
         setLanguages(parsed.data)
-        if (activeLanguageId !== parsed.active && activeLanguageId) {
+        if (parsed.active && activeLanguageIdRef.current !== parsed.active) {
           selectLanguage(parsed.active)
         }
         const lang = parsed.data.find((language) => language.id === parsed.active)
@@ -133,6 +136,11 @@ function App() {
       if (parsed?.type === 'profile') {
         setProfile(parsed.data)
         setProfileLoaded(true)
+        if (parsed.data.nickname) {
+          setPage((current) =>
+            current === 'pairing' || current === 'welcome' ? 'languages' : current
+          )
+        }
       }
       if (parsed?.type === 'pairing-status') setPairingStatus(parsed.data)
       if (parsed?.type === 'pairing-request') setPairingRequestCode(parsed.data)
@@ -240,16 +248,23 @@ function App() {
   }
 
   function selectLanguage(id) {
+    activeLanguageIdRef.current = id
     setActiveLanguageId(id)
+    setPage('language')
     const lang = findActiveLanguage(id)
     setIsOwnerOfLanguage(lang ? lang.isOwner : false)
     setPolls([])
     setCommentsByPoll({})
+    setSelectedPollId(null)
     send({ type: 'language', data: { cmd: 'select', id } })
   }
 
   function findActiveLanguage(id = activeLanguageId) {
     return languages.find((language) => language.id === id)
+  }
+
+  function navigateToPage(nextPage) {
+    setPage((currentPage) => (currentPage === nextPage && activeLanguage ? 'language' : nextPage))
   }
 
   return (
@@ -260,32 +275,15 @@ function App() {
           <h1>
             {updateReady
               ? 'Update ready!'
-              : selectedUser?.nickname || activeLanguage?.name || 'Language library'}
+              : selectedUser?.nickname ||
+                (page === 'language' ? activeLanguage?.name : null) ||
+                'Language library'}
           </h1>
         </div>
         <span className='status'>
           {peerCount} {peerCount === 1 ? 'peer' : 'peers'} connected · {status}
         </span>
       </header>
-      {!selectedUser && profileLoaded && (
-        <Profile
-          profile={profile}
-          onSave={(data) => request({ type: 'profile', data: { cmd: 'save', ...data } })}
-          onError={(error) => setNotice(error.message)}
-        />
-      )}
-      {!selectedUser && pairingStatus && (
-        <Pairing
-          status={pairingStatus}
-          requestCode={pairingRequestCode}
-          approvalCode={pairingApprovalCode}
-          connectionStatuses={pairingConnectionStatuses}
-          onCreateRequest={() => request({ type: 'pairing', data: { cmd: 'create-request' } })}
-          onApprove={(code) => request({ type: 'pairing', data: { cmd: 'approve', code } })}
-          onComplete={(code) => request({ type: 'pairing', data: { cmd: 'complete', code } })}
-          onError={(error) => setNotice(error.message)}
-        />
-      )}
       {notice && (
         <p className='notice' role='alert'>
           {notice}
@@ -296,191 +294,337 @@ function App() {
           {updating ? 'Updating...' : 'Apply update'}
         </button>
       )}
-      {selectedUser ? (
-        <UserPage
-          user={selectedUser}
-          canManage={canManageLanguage}
-          roles={
-            canManageLanguage && rolesLanguageId === activeLanguageId
-              ? languageRoles.find((user) => user.userKey.toLowerCase() === selectedUser.userKey)
-                  ?.roles || []
-              : []
-          }
-          onBack={() => setSelectedUser(null)}
-          onRoleChange={(target, role, enabled) =>
-            request({
-              type: 'language',
-              data: { cmd: 'set-role', languageId: activeLanguageId, target, role, enabled }
-            })
-          }
-        />
-      ) : !activeLanguage ? (
-        <section className='language-home'>
-          <div className='language-intro'>
-            <p className='eyebrow'>Shared study spaces</p>
-            <h2>Choose a language to begin</h2>
-            <p>
-              Each language has its own replicated poll database. Create one or join with a shared
-              key.
-            </p>
+      {!profileLoaded ? (
+        <p className='empty'>Loading your profile…</p>
+      ) : !profile.nickname ? (
+        <section className='welcome-panel'>
+          <p className='eyebrow'>Welcome</p>
+          <h2>Set up your profile or pair this device</h2>
+          <p>
+            Create a profile for this device, or connect it to a profile you already use on another
+            device.
+          </p>
+          <div className='welcome-actions'>
+            <button className='primary' type='button' onClick={() => setPage('profile')}>
+              Set up profile
+            </button>
+            <button className='quiet' type='button' onClick={() => setPage('pairing')}>
+              Pair this device
+            </button>
           </div>
-          <div className='language-forms'>
-            <form className='language-form' onSubmit={createLanguage}>
-              <h2>Create a language</h2>
-              <input
-                value={languageName}
-                onChange={(event) => setLanguageName(event.target.value)}
-                placeholder='Language name'
-                required
-              />
-              <textarea
-                value={languageDescription}
-                onChange={(event) => setLanguageDescription(event.target.value)}
-                placeholder='Short description'
-                rows='3'
-              />
-              <button className='primary' type='submit'>
-                Create language
-              </button>
-            </form>
-            <form className='language-form' onSubmit={joinLanguage}>
-              <h2>Join a language</h2>
-              <input
-                value={joinKey}
-                onChange={(event) => setJoinKey(event.target.value)}
-                placeholder='Paste language key'
-                pattern='[0-9a-fA-F]{64}'
-                title='Use the 64-character language key'
-                required
-              />
-              <button className='primary' type='submit'>
-                Join language
-              </button>
-            </form>
-          </div>
-          {languages.length > 0 && (
-            <div className='joined-list'>
-              <h2>Your languages</h2>
-              {languages.map((language) => (
-                <button
-                  className='language-row'
-                  key={language.id}
-                  onClick={() => selectLanguage(language.id)}
-                >
-                  <strong>{language.name}</strong>
-                  <span>{language.description || 'No description'}</span>
-                </button>
-              ))}
-            </div>
+          {page === 'profile' && (
+            <Profile
+              profile={profile}
+              onSave={(data) => {
+                setPage('languages')
+                request({ type: 'profile', data: { cmd: 'save', ...data } })
+              }}
+              onError={(error) => setNotice(error.message)}
+            />
+          )}
+          {page === 'pairing' && pairingStatus && (
+            <Pairing
+              status={pairingStatus}
+              requestCode={pairingRequestCode}
+              approvalCode={pairingApprovalCode}
+              connectionStatuses={pairingConnectionStatuses}
+              onCreateRequest={() => request({ type: 'pairing', data: { cmd: 'create-request' } })}
+              onApprove={(code) => request({ type: 'pairing', data: { cmd: 'approve', code } })}
+              onComplete={(code) => request({ type: 'pairing', data: { cmd: 'complete', code } })}
+              onError={(error) => setNotice(error.message)}
+            />
           )}
         </section>
       ) : (
         <>
-          <div className='language-bar'>
-            <div>
-              <p className='eyebrow'>Language</p>
-              <h2>{activeLanguage.name}</h2>
-              <p>{activeLanguage.description}</p>
-            </div>
-            <div className='language-actions'>
+          <nav className='app-menu' aria-label='Main menu'>
+            <button
+              className={page === 'profile' ? 'active' : ''}
+              type='button'
+              onClick={() => navigateToPage('profile')}
+            >
+              Profile
+            </button>
+            <button
+              className={page === 'pairing' ? 'active' : ''}
+              type='button'
+              onClick={() => navigateToPage('pairing')}
+            >
+              Pairing
+            </button>
+            <button
+              className={page === 'languages' ? 'active' : ''}
+              type='button'
+              onClick={() => navigateToPage('languages')}
+            >
+              Languages
+            </button>
+            {activeLanguage && canManageLanguage && (
+              <>
+                <button
+                  className={page === 'language-api' ? 'active' : ''}
+                  type='button'
+                  onClick={() => navigateToPage('language-api')}
+                >
+                  Translation API details
+                </button>
+                <button
+                  className={page === 'language-members' ? 'active' : ''}
+                  type='button'
+                  onClick={() => navigateToPage('language-members')}
+                >
+                  Language members
+                </button>
+              </>
+            )}
+            {activeLanguage && canCreateWords && (
               <button
-                className='quiet'
-                onClick={() => {
-                  setActiveLanguageId(null)
-                  setIsOwnerOfLanguage(false)
-                  setPolls([])
-                }}
-              >
-                All languages
-              </button>
-              <button
-                className='share-key'
-                onClick={() => navigator.clipboard?.writeText(activeLanguage.key)}
-              >
-                Copy key
-              </button>
-              <code>{activeLanguage.key}</code>
-            </div>
-          </div>
-          <TranslationAPI_Details canEdit={canManageLanguage} />
-          <LanguageRoles
-            accountKey={rolesLanguageId === activeLanguageId ? accountKey : null}
-            canManage={canManageLanguage}
-            members={membersLanguageId === activeLanguageId ? languageMembers : []}
-            roles={rolesLanguageId === activeLanguageId ? languageRoles : []}
-            onOpenUser={setSelectedUser}
-            onAssign={(target, role, enabled) =>
-              request({
-                type: 'language',
-                data: { cmd: 'set-role', languageId: activeLanguageId, target, role, enabled }
-              })
-            }
-          />
-          <TranslateWord canEdit={canCreateWords} />
-          {canCreateWords && <SaveTranslation />}
-          <Polls
-            canComment={canManageLanguage || !currentRoles.includes('banned-comment')}
-            canManageLanguage={canManageLanguage}
-            onOpenUser={setSelectedUser}
-          />
-          {canCreatePolls && (
-            <form className='create-panel' onSubmit={createPoll}>
-              <div>
-                <p className='eyebrow'>New poll</p>
-                <h2>Ask the community</h2>
-              </div>
-              <input
-                value={question.text}
-                onChange={(event) =>
-                  setQuestion((current) => ({ ...current, text: event.target.value }))
-                }
-                placeholder='What should we decide together?'
-                required
-              />
-              <MediaFields
-                value={question.media}
-                onChange={(media) => setQuestion((current) => ({ ...current, media }))}
-                onError={(error) => setNotice(error.message)}
-                label='Question media'
-              />
-              {options.map((option, index) => (
-                <div className='option-fields' key={index}>
-                  <input
-                    value={option.text}
-                    onChange={(event) =>
-                      setOptions((current) =>
-                        current.map((item, itemIndex) =>
-                          itemIndex === index ? { ...item, text: event.target.value } : item
-                        )
-                      )
-                    }
-                    placeholder={`Option ${index + 1}`}
-                    required
-                  />
-                  <MediaFields
-                    value={option.media}
-                    onChange={(media) =>
-                      setOptions((current) =>
-                        current.map((item, itemIndex) =>
-                          itemIndex === index ? { ...item, media } : item
-                        )
-                      )
-                    }
-                    onError={(error) => setNotice(error.message)}
-                    label={`Option ${index + 1} media`}
-                  />
-                </div>
-              ))}
-              <button
+                className={page === 'add-translation' ? 'active' : ''}
                 type='button'
-                onClick={() => setOptions((current) => [...current, { text: '', media: [] }])}
+                onClick={() => navigateToPage('add-translation')}
               >
-                Add option
+                Add new translation
               </button>
-              <button className='primary' type='submit'>
-                Publish poll
-              </button>
-            </form>
+            )}
+          </nav>
+          {activeLanguage && page !== 'language' && !selectedUser && (
+            <button className='quiet route-back' type='button' onClick={() => setPage('language')}>
+              ← Back to language
+            </button>
+          )}
+          <div className={selectedUser ? 'route-content hidden' : 'route-content'}>
+            {page === 'profile' && (
+              <Profile
+                profile={profile}
+                onSave={(data) => request({ type: 'profile', data: { cmd: 'save', ...data } })}
+                onError={(error) => setNotice(error.message)}
+              />
+            )}
+            {page === 'pairing' && pairingStatus && (
+              <Pairing
+                status={pairingStatus}
+                requestCode={pairingRequestCode}
+                approvalCode={pairingApprovalCode}
+                connectionStatuses={pairingConnectionStatuses}
+                onCreateRequest={() =>
+                  request({ type: 'pairing', data: { cmd: 'create-request' } })
+                }
+                onApprove={(code) => request({ type: 'pairing', data: { cmd: 'approve', code } })}
+                onComplete={(code) => request({ type: 'pairing', data: { cmd: 'complete', code } })}
+                onError={(error) => setNotice(error.message)}
+              />
+            )}
+            {page === 'languages' && (
+              <section className='language-home'>
+                <div className='language-intro'>
+                  <p className='eyebrow'>Shared study spaces</p>
+                  <h2>Your languages</h2>
+                  <p>Create a language or join one with a shared key.</p>
+                </div>
+                <div className='language-forms'>
+                  <form className='language-form' onSubmit={createLanguage}>
+                    <h2>Create a language</h2>
+                    <input
+                      value={languageName}
+                      onChange={(event) => setLanguageName(event.target.value)}
+                      placeholder='Language name'
+                      required
+                    />
+                    <textarea
+                      value={languageDescription}
+                      onChange={(event) => setLanguageDescription(event.target.value)}
+                      placeholder='Short description'
+                      rows='3'
+                    />
+                    <button className='primary' type='submit'>
+                      Create language
+                    </button>
+                  </form>
+                  <form className='language-form' onSubmit={joinLanguage}>
+                    <h2>Join a language</h2>
+                    <input
+                      value={joinKey}
+                      onChange={(event) => setJoinKey(event.target.value)}
+                      placeholder='Paste language key'
+                      pattern='[0-9a-fA-F]{64}'
+                      title='Use the 64-character language key'
+                      required
+                    />
+                    <button className='primary' type='submit'>
+                      Join language
+                    </button>
+                  </form>
+                </div>
+                {languages.length > 0 && (
+                  <div className='joined-list'>
+                    <h2>Your languages</h2>
+                    {languages.map((language) => (
+                      <button
+                        className='language-row'
+                        key={language.id}
+                        onClick={() => selectLanguage(language.id)}
+                      >
+                        <strong>{language.name}</strong>
+                        <span>{language.description || 'No description'}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+            {page === 'language-api' && activeLanguage && canManageLanguage && (
+              <>
+                <div className='language-bar'>
+                  <div>
+                    <p className='eyebrow'>Language</p>
+                    <h2>{activeLanguage.name}</h2>
+                  </div>
+                </div>
+                <TranslationAPI_Details canEdit={canManageLanguage} />
+              </>
+            )}
+            {page === 'language-members' && activeLanguage && canManageLanguage && (
+              <>
+                <div className='language-bar'>
+                  <div>
+                    <p className='eyebrow'>Language members</p>
+                    <h2>{activeLanguage.name}</h2>
+                  </div>
+                </div>
+                <LanguageRoles
+                  accountKey={rolesLanguageId === activeLanguageId ? accountKey : null}
+                  canManage={canManageLanguage}
+                  members={membersLanguageId === activeLanguageId ? languageMembers : []}
+                  roles={rolesLanguageId === activeLanguageId ? languageRoles : []}
+                  onOpenUser={setSelectedUser}
+                  onAssign={(target, role, enabled) =>
+                    request({
+                      type: 'language',
+                      data: { cmd: 'set-role', languageId: activeLanguageId, target, role, enabled }
+                    })
+                  }
+                />
+              </>
+            )}
+            {page === 'add-translation' && activeLanguage && canCreateWords && (
+              <>
+                <div className='language-bar'>
+                  <div>
+                    <p className='eyebrow'>Add new translation</p>
+                    <h2>{activeLanguage.name}</h2>
+                  </div>
+                </div>
+                <SaveTranslation />
+              </>
+            )}
+            {page === 'language' && activeLanguage && (
+              <>
+                <div className='language-bar'>
+                  <div>
+                    <p className='eyebrow'>Language</p>
+                    <h2>{activeLanguage.name}</h2>
+                    <p>{activeLanguage.description}</p>
+                  </div>
+                  <div className='language-actions'>
+                    <button className='quiet' onClick={() => setPage('languages')}>
+                      All languages
+                    </button>
+                    <button
+                      className='share-key'
+                      onClick={() => navigator.clipboard?.writeText(activeLanguage.key)}
+                    >
+                      Copy key
+                    </button>
+                    <code>{activeLanguage.key}</code>
+                  </div>
+                </div>
+                <TranslateWord canEdit={canCreateWords} />
+                <Polls
+                  canComment={canManageLanguage || !currentRoles.includes('banned-comment')}
+                  canManageLanguage={canManageLanguage}
+                  onOpenUser={setSelectedUser}
+                />
+                {canCreatePolls && (
+                  <form className='create-panel' onSubmit={createPoll}>
+                    <div>
+                      <p className='eyebrow'>New poll</p>
+                      <h2>Ask the community</h2>
+                    </div>
+                    <input
+                      value={question.text}
+                      onChange={(event) =>
+                        setQuestion((current) => ({ ...current, text: event.target.value }))
+                      }
+                      placeholder='What should we decide together?'
+                      required
+                    />
+                    <MediaFields
+                      value={question.media}
+                      onChange={(media) => setQuestion((current) => ({ ...current, media }))}
+                      onError={(error) => setNotice(error.message)}
+                      label='Question media'
+                    />
+                    {options.map((option, index) => (
+                      <div className='option-fields' key={index}>
+                        <input
+                          value={option.text}
+                          onChange={(event) =>
+                            setOptions((current) =>
+                              current.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, text: event.target.value } : item
+                              )
+                            )
+                          }
+                          placeholder={`Option ${index + 1}`}
+                          required
+                        />
+                        <MediaFields
+                          value={option.media}
+                          onChange={(media) =>
+                            setOptions((current) =>
+                              current.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, media } : item
+                              )
+                            )
+                          }
+                          onError={(error) => setNotice(error.message)}
+                          label={`Option ${index + 1} media`}
+                        />
+                      </div>
+                    ))}
+                    <button
+                      type='button'
+                      onClick={() => setOptions((current) => [...current, { text: '', media: [] }])}
+                    >
+                      Add option
+                    </button>
+                    <button className='primary' type='submit'>
+                      Publish poll
+                    </button>
+                  </form>
+                )}
+              </>
+            )}
+          </div>
+          {selectedUser && (
+            <UserPage
+              user={selectedUser}
+              canManage={canManageLanguage}
+              roles={
+                canManageLanguage && rolesLanguageId === activeLanguageId
+                  ? languageRoles.find(
+                      (user) => user.userKey.toLowerCase() === selectedUser.userKey
+                    )?.roles || []
+                  : []
+              }
+              onBack={() => setSelectedUser(null)}
+              onRoleChange={(target, role, enabled) =>
+                request({
+                  type: 'language',
+                  data: { cmd: 'set-role', languageId: activeLanguageId, target, role, enabled }
+                })
+              }
+            />
           )}
         </>
       )}

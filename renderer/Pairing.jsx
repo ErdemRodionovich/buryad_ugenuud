@@ -62,8 +62,8 @@ export function Pairing({
         <h2>Pair another device</h2>
         {status?.paired ? (
           <p className='empty'>
-            This device is authorized for its current profile. {status.devices?.filter((device) => device.active).length || 0}{' '}
-            active devices.
+            This device is authorized for its current profile.{' '}
+            {status.devices?.filter((device) => device.active).length || 0} active devices.
           </p>
         ) : status?.pending ? (
           <p className='empty'>
@@ -75,16 +75,36 @@ export function Pairing({
           </p>
         )}
       </div>
+      {status?.devices?.length > 0 && (
+        <section className='paired-devices'>
+          <h3>Paired devices</h3>
+          <ul>
+            {status.devices.map((device) => (
+              <li key={device.key}>
+                <code>{device.key}</code>
+                <span>
+                  {device.key === status.deviceKey ? 'This device · ' : ''}
+                  {device.active ? 'Authorized' : 'Not authorized'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <div className='pairing-grid'>
         <section className='pairing-step'>
           <h3>On the device to add: create a request</h3>
-          <p>Create a request here, then paste it into an already-authorized device for approval.</p>
+          <p>
+            Create a request here, then paste it into an already-authorized device for approval.
+          </p>
           <button className='primary' type='button' onClick={onCreateRequest}>
             Create pairing request
           </button>
           {requestCode && (
             <div className='pairing-code'>
-              <small>Direct connection: {connectionStatuses?.[currentRequestId] || 'starting'}</small>
+              <small>
+                Direct connection: {connectionStatuses?.[currentRequestId] || 'starting'}
+              </small>
               <textarea value={requestCode} readOnly rows={5} aria-label='Pairing request code' />
               <button type='button' className='quiet' onClick={() => copyCode(requestCode)}>
                 Copy request
@@ -112,7 +132,9 @@ export function Pairing({
           </button>
           {approvalCode && (
             <div className='pairing-code'>
-              <small>Direct connection: {connectionStatuses?.[approvalRequestId] || 'starting'}</small>
+              <small>
+                Direct connection: {connectionStatuses?.[approvalRequestId] || 'starting'}
+              </small>
               <textarea value={approvalCode} readOnly rows={5} aria-label='Pairing approval code' />
               <button type='button' className='quiet' onClick={() => copyCode(approvalCode)}>
                 Copy approval
@@ -124,8 +146,8 @@ export function Pairing({
         <form className='pairing-step' onSubmit={complete}>
           <h3>On the device to add: finish pairing</h3>
           <p>
-            If the direct connection succeeds, this device joins automatically. Otherwise paste
-            the 24-hour approval code here. Pairing replaces the current local profile and language
+            If the direct connection succeeds, this device joins automatically. Otherwise paste the
+            24-hour approval code here. Pairing replaces the current local profile and language
             list.
           </p>
           <textarea
