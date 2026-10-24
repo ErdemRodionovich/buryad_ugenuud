@@ -9,6 +9,12 @@ import { MediaPreview } from './Media'
 import { IPCContext } from './IPCContext'
 import { ActiveLanguageContext } from './ActiveLanguageContext'
 
+function hasTranslation(translation) {
+  return (
+    translation && translation !== 'Translation failed' && translation !== 'No translation found'
+  )
+}
+
 export function TranslateWord({ canEdit, canSuggest, onSuggestTranslation }) {
   const [word, setWord] = useState('')
   const [translationG, setTranslationG] = useState('')
@@ -72,7 +78,10 @@ export function TranslateWord({ canEdit, canSuggest, onSuggestTranslation }) {
           Translate
         </button>
       </div>
-      {(translationG || translationY || translationB) && (
+      {(foundTranslations.length > 0 ||
+        hasTranslation(translationG) ||
+        hasTranslation(translationY) ||
+        hasTranslation(translationB)) && (
         <div className='translation-result'>
           {foundTranslations.map((t, index) => (
             <div className='found-translation' key={index}>
@@ -87,12 +96,24 @@ export function TranslateWord({ canEdit, canSuggest, onSuggestTranslation }) {
               )}
             </div>
           ))}
-          <br />
-          Google translate: {translationG}
-          <br />
-          Yandex translate: {translationY}
-          <br />
-          Burlang: {translationB}
+          {hasTranslation(translationG) && (
+            <>
+              <br />
+              Google translate: {translationG}
+            </>
+          )}
+          {hasTranslation(translationY) && (
+            <>
+              <br />
+              Yandex translate: {translationY}
+            </>
+          )}
+          {hasTranslation(translationB) && (
+            <>
+              <br />
+              Burlang: {translationB}
+            </>
+          )}
           {canSuggest && (
             <>
               <br />
@@ -108,12 +129,7 @@ export function TranslateWord({ canEdit, canSuggest, onSuggestTranslation }) {
                       translationG,
                       translationY,
                       translationB
-                    ].filter(
-                      (translation) =>
-                        translation &&
-                        translation !== 'Translation failed' &&
-                        translation !== 'No translation found'
-                    )
+                    ].filter(hasTranslation)
                   })
                 }
               >
