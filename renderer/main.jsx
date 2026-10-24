@@ -38,6 +38,7 @@ function App() {
   const [profile, setProfile] = useState({ nickname: '', avatar: null })
   const [profileLoaded, setProfileLoaded] = useState(false)
   const [page, setPage] = useState('languages')
+  const [menuOpen, setMenuOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
   const [pairingStatus, setPairingStatus] = useState(null)
   const [pairingRequestCode, setPairingRequestCode] = useState('')
@@ -283,7 +284,110 @@ function App() {
         <span className='status'>
           {peerCount} {peerCount === 1 ? 'peer' : 'peers'} connected · {status}
         </span>
+        {profileLoaded && profile.nickname && (
+          <button
+            className='menu-toggle'
+            type='button'
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls='main-navigation'
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            ☰ Menu
+          </button>
+        )}
       </header>
+      {menuOpen && (
+        <>
+          <button
+            className='menu-backdrop'
+            type='button'
+            aria-label='Close menu'
+            onClick={() => setMenuOpen(false)}
+          />
+          <aside className='menu-drawer' id='main-navigation' aria-label='Main menu'>
+            <div className='menu-drawer-heading'>
+              <h2>Menu</h2>
+              <button
+                className='quiet'
+                type='button'
+                aria-label='Close menu'
+                onClick={() => setMenuOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+            <nav className='app-menu'>
+              <button
+                className={page === 'profile' ? 'active' : ''}
+                type='button'
+                onClick={() => {
+                  navigateToPage('profile')
+                  setMenuOpen(false)
+                }}
+              >
+                Profile
+              </button>
+              <button
+                className={page === 'pairing' ? 'active' : ''}
+                type='button'
+                onClick={() => {
+                  navigateToPage('pairing')
+                  setMenuOpen(false)
+                }}
+              >
+                Pairing
+              </button>
+              <button
+                className={page === 'languages' ? 'active' : ''}
+                type='button'
+                onClick={() => {
+                  navigateToPage('languages')
+                  setMenuOpen(false)
+                }}
+              >
+                Languages
+              </button>
+              {activeLanguage && canManageLanguage && (
+                <>
+                  <button
+                    className={page === 'language-api' ? 'active' : ''}
+                    type='button'
+                    onClick={() => {
+                      navigateToPage('language-api')
+                      setMenuOpen(false)
+                    }}
+                  >
+                    Translation API details
+                  </button>
+                  <button
+                    className={page === 'language-members' ? 'active' : ''}
+                    type='button'
+                    onClick={() => {
+                      navigateToPage('language-members')
+                      setMenuOpen(false)
+                    }}
+                  >
+                    Language members
+                  </button>
+                </>
+              )}
+              {activeLanguage && canCreateWords && (
+                <button
+                  className={page === 'add-translation' ? 'active' : ''}
+                  type='button'
+                  onClick={() => {
+                    navigateToPage('add-translation')
+                    setMenuOpen(false)
+                  }}
+                >
+                  Add new translation
+                </button>
+              )}
+            </nav>
+          </aside>
+        </>
+      )}
       {notice && (
         <p className='notice' role='alert'>
           {notice}
@@ -337,56 +441,6 @@ function App() {
         </section>
       ) : (
         <>
-          <nav className='app-menu' aria-label='Main menu'>
-            <button
-              className={page === 'profile' ? 'active' : ''}
-              type='button'
-              onClick={() => navigateToPage('profile')}
-            >
-              Profile
-            </button>
-            <button
-              className={page === 'pairing' ? 'active' : ''}
-              type='button'
-              onClick={() => navigateToPage('pairing')}
-            >
-              Pairing
-            </button>
-            <button
-              className={page === 'languages' ? 'active' : ''}
-              type='button'
-              onClick={() => navigateToPage('languages')}
-            >
-              Languages
-            </button>
-            {activeLanguage && canManageLanguage && (
-              <>
-                <button
-                  className={page === 'language-api' ? 'active' : ''}
-                  type='button'
-                  onClick={() => navigateToPage('language-api')}
-                >
-                  Translation API details
-                </button>
-                <button
-                  className={page === 'language-members' ? 'active' : ''}
-                  type='button'
-                  onClick={() => navigateToPage('language-members')}
-                >
-                  Language members
-                </button>
-              </>
-            )}
-            {activeLanguage && canCreateWords && (
-              <button
-                className={page === 'add-translation' ? 'active' : ''}
-                type='button'
-                onClick={() => navigateToPage('add-translation')}
-              >
-                Add new translation
-              </button>
-            )}
-          </nav>
           {activeLanguage && page !== 'language' && !selectedUser && (
             <button className='quiet route-back' type='button' onClick={() => setPage('language')}>
               ← Back to language

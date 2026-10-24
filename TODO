@@ -14,7 +14,7 @@
   * V - Admin's panel
   * V - User page opens from clickable nickname/avatar; admins can grant or remove roles
 * V - Comments in poll
-* Open last opened language
+* V - Open last opened language
 * Study plans (Courses):
   * Creation of exercises, steps
   * Studying by student(user), progress, correct/wrong
