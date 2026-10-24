@@ -6,12 +6,14 @@
   * V - shrink photo till 2 Mb if it is bigger
 * V - Pair other devices for the same user (signed 24-hour request/approval, direct encrypted transfer with copy-paste fallback)
 * Roles, administator of language can assign roles to others
-  * Administrator of language - can do anything in language
-  * Vote closer - can close votes
-  * Word creator - can add new words to translation database
-  * Banned to create vote
-  * Banned to comment
-* Comments on vote
+  * V - Administrator of language - can do anything in language
+  * V - Vote closer - can close votes
+  * V - Word creator - can add new words to translation database
+  * V - Banned to create vote
+  * V - Banned to comment
+  * Admin's panel
+  * User's panel with buttons "Change roles" for admin
+* Comments in poll
 * Open last opened language
 * Study plans (Courses):
   * Creation of exercises, steps

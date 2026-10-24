@@ -53,8 +53,15 @@ The code is small — read it for the wiring; below are only the non-obvious fac
   the same account creator. Language roles are stored in each language Autobase
   by shared account-signing public key; role assignments and privileged writes
   are signed and revalidated during deterministic replay. A language's creator
-  account is the initial administrator. Comments are not implemented yet, so
-  the ban-comment role is stored but has no comment action to restrict.
+  account is the initial administrator. Poll comments are signed by the shared
+  account key and stored in the language Autobase under the poll's comment
+  thread. Comment events are validated during replay, including the ban-comment
+  role, and carry text plus optional media. Comment reactions are also signed,
+  replay-validated against the shared Unicode emoji dataset, and stored per
+  comment, emoji, and account. The comment and reaction pickers use the same
+  grouped emoji data, including multi-codepoint sequences and skin-tone
+  variants. Comment author labels use the signed member snapshot stored in that
+  language.
   Each language Autobase also stores signed nickname/avatar snapshots for its
   joined accounts. The user Autobase stores avatars up to 2 MiB and the
   language snapshot is separately compressed to 80 KiB; poll creator labels use

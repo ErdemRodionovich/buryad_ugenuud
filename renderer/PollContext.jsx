@@ -1,15 +1,16 @@
-import { createContext, useState, useContext, useRef } from 'react';
+import { createContext, useState, useContext, useRef } from 'react'
 import { IPCContext } from './IPCContext'
 import { ActiveLanguageContext } from './ActiveLanguageContext'
 
-export const PollContext = createContext();
+export const PollContext = createContext()
 
 export function PollProvider({ children }) {
-  const [polls, setPolls] = useState([]);
+  const [polls, setPolls] = useState([])
+  const [commentsByPoll, setCommentsByPoll] = useState({})
   const [selectedPollId, setSelectedPollId] = useState(null)
   const refreshTimer = useRef(null)
 
-  const { send, request } = useContext(IPCContext)
+  const { send } = useContext(IPCContext)
   const { activeLanguageId } = useContext(ActiveLanguageContext)
 
   function refresh() {
@@ -26,8 +27,20 @@ export function PollProvider({ children }) {
   }
 
   return (
-    <PollContext.Provider value={{ polls, setPolls, selectedPollId, setSelectedPollId, refresh, resetRefresher, clearRefresherTimeout }}>
+    <PollContext.Provider
+      value={{
+        polls,
+        setPolls,
+        commentsByPoll,
+        setCommentsByPoll,
+        selectedPollId,
+        setSelectedPollId,
+        refresh,
+        resetRefresher,
+        clearRefresherTimeout
+      }}
+    >
       {children}
     </PollContext.Provider>
-  );
+  )
 }

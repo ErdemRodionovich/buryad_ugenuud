@@ -56,7 +56,8 @@ function App() {
   const { workerSpecifier, send, request, notice, setNotice } = useContext(IPCContext)
   const { activeLanguageId, setActiveLanguageId, setIsOwnerOfLanguage } =
     useContext(ActiveLanguageContext)
-  const { setPolls, resetRefresher, clearRefresherTimeout } = useContext(PollContext)
+  const { setPolls, setCommentsByPoll, resetRefresher, clearRefresherTimeout } =
+    useContext(PollContext)
 
   const activeLanguage = findActiveLanguage()
   const currentRoles =
@@ -120,6 +121,12 @@ function App() {
         setMembersLanguageId(parsed.languageId)
       }
       if (parsed?.type === 'polls') setPolls(Object.values(parsed.data))
+      if (parsed?.type === 'poll-comments') {
+        setCommentsByPoll((current) => ({
+          ...current,
+          [`${parsed.languageId}/${parsed.pollId}`]: parsed.data
+        }))
+      }
       if (parsed?.type === 'error') setNotice(parsed.data)
       if (parsed?.type === 'peers') setPeerCount(parsed.data)
       if (parsed?.type === 'profile') {
@@ -236,6 +243,7 @@ function App() {
     const lang = findActiveLanguage(id)
     setIsOwnerOfLanguage(lang ? lang.isOwner : false)
     setPolls([])
+    setCommentsByPoll({})
     send({ type: 'language', data: { cmd: 'select', id } })
   }
 
@@ -407,7 +415,7 @@ function App() {
           )}
           <TranslateWord canEdit={canCreateWords} />
           {canCreateWords && <SaveTranslation />}
-          <Polls />
+          <Polls canComment={canManageLanguage || !currentRoles.includes('banned-comment')} />
           {canCreatePolls && (
             <form className='create-panel' onSubmit={createPoll}>
               <div>

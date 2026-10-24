@@ -359,6 +359,144 @@ h2 {
   text-decoration: underline;
 }
 
+.poll-comments {
+  display: grid;
+  gap: 14px;
+  margin-top: 28px;
+  border-top: 1px solid #d8e3d9;
+  padding-top: 20px;
+}
+
+.poll-comments .section-heading h3 {
+  margin: 0;
+  color: #1d4a3b;
+  font-size: 20px;
+}
+
+.comment-list {
+  display: grid;
+}
+
+.poll-comment {
+  display: grid;
+  gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid #d8e3d9;
+}
+
+.comment-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.comment-heading time {
+  color: #789086;
+  font: 11px monospace;
+  text-align: right;
+}
+
+.poll-comment p {
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.comment-form {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid #d8e3d9;
+  padding-top: 16px;
+}
+
+.comment-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reaction-button {
+  border: 1px solid #c6d5ca;
+  border-radius: 16px;
+  background: #eef3ed;
+  padding: 4px 9px;
+  font-size: 14px;
+}
+
+.reaction-button.active {
+  border-color: #2c705b;
+  background: #d8e3d9;
+}
+
+.reaction-button span {
+  color: #668073;
+  font: 11px monospace;
+}
+
+.emoji-picker {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  position: relative;
+}
+
+.emoji-picker-panel {
+  display: grid;
+  gap: 8px;
+  width: min(360px, calc(100vw - 80px));
+  border: 1px solid #c6d5ca;
+  border-radius: 4px;
+  background: white;
+  padding: 8px;
+}
+
+.emoji-picker-results {
+  display: grid;
+  max-height: 280px;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.emoji-picker-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.emoji-picker-options button {
+  min-width: 36px;
+  min-height: 36px;
+  font-size: 21px;
+}
+
+.emoji-picker-options button:hover {
+  background: #eef3ed;
+}
+
+.emoji-group h4 {
+  margin: 0 0 6px;
+  color: #668073;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.reaction-picker {
+  position: relative;
+}
+
+.reaction-picker .emoji-picker-panel {
+  position: absolute;
+  z-index: 1;
+  bottom: calc(100% + 6px);
+  left: 0;
+}
+
+.add-reaction {
+  color: #668073;
+}
+
 .create-panel {
   display: grid;
   grid-template-columns: 1fr 1.3fr 1fr 1fr auto;
@@ -632,6 +770,11 @@ code {
   .pairing-grid,
   .role-form {
     grid-template-columns: 1fr;
+  }
+
+  .comment-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .profile-form {
