@@ -8,7 +8,7 @@ import { MediaPreview } from './Media'
 import { IPCContext } from './IPCContext'
 import { ActiveLanguageContext } from './ActiveLanguageContext'
 
-export function TranslateWord() {
+export function TranslateWord({ canEdit }) {
     const [word, setWord] = useState('')
     const [translationG, setTranslationG] = useState('')
     const [translationY, setTranslationY] = useState('')
@@ -43,31 +43,32 @@ export function TranslateWord() {
     }
 
     return (
-        <div className="translate-panel">
+        <div className='translate-panel'>
             <p className='eyebrow'>Translate</p>
-            <div className="translate-bar">
-                <input
-                    type="text"
-                    value={word}
-                    onChange={(e) => setWord(e.target.value)}
-                    placeholder="Enter word to translate"
-                />
-                <button className='primary' type='submit' onClick={handleTranslate}>Translate</button>
+            <div className='translate-bar'>
+                <input type='text' value={word} onChange={(e) => setWord(e.target.value)} placeholder='Enter word to translate' />
+                <button className='primary' type='submit' onClick={handleTranslate}>
+                    Translate
+                </button>
             </div>
             {translationG && (
-                <div className="translation-result">
+                <div className='translation-result'>
                     {foundTranslations.map((t, index) => (
                         <div className='found-translation' key={index}>
                             <p>{t.language}</p>
                             <p>{t.translation}</p>
                             <p>{t.description}</p>
                             <MediaPreview media={t.media} />
-                            <button className='primary' onClick={() => editTranslation(t.translationID)}>Edit translation</button>
+                            {canEdit && (
+                                <button className='primary' onClick={() => editTranslation(t.translationID)}>
+                                    Edit translation
+                                </button>
+                            )}
                         </div>
                     ))}
-
                     <br />
-                    Google translate: {translationG}<br />
+                    Google translate: {translationG}
+                    <br />
                     Yandex translate: {translationY}
                 </div>
             )}

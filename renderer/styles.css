@@ -205,6 +205,7 @@ button:disabled {
 .translate-panel,
 .poll-list,
 .poll-detail,
+.language-roles,
 .create-panel {
     border-top: 3px solid #2c705b;
     background: #fbfcf8;
@@ -462,6 +463,73 @@ textarea {
     color: white;
 }
 
+.language-roles {
+    display: grid;
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.language-roles h2 {
+    margin: 0;
+}
+
+.language-roles > p:not(.eyebrow) {
+    margin: 0;
+    color: #668073;
+    line-height: 1.5;
+}
+
+.role-account-key {
+    display: grid;
+    gap: 6px;
+    padding: 12px;
+    background: #eef3ed;
+}
+
+.role-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 0.6fr) auto;
+    gap: 10px;
+}
+
+.role-list {
+    display: grid;
+}
+
+.role-user {
+    display: grid;
+    gap: 8px;
+    padding: 14px 0;
+    border-top: 1px solid #d8e3d9;
+}
+
+.role-user code {
+    max-width: none;
+}
+
+.role-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 3px;
+    background: #d8e3d9;
+    padding: 5px 8px;
+    color: #1d4a3b;
+    font-size: 12px;
+}
+
+.role-badge button {
+    padding: 0 2px;
+    color: #a34f2e;
+    font-weight: 700;
+}
+
 code {
     max-width: 420px;
     overflow-wrap: anywhere;
@@ -483,7 +551,8 @@ code {
     .language-forms,
     .profile-panel,
     .profile-form,
-    .pairing-grid {
+    .pairing-grid,
+    .role-form {
         grid-template-columns: 1fr;
     }
 

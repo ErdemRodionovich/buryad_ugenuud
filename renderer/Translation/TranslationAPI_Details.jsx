@@ -4,9 +4,9 @@ import { IPCContext } from '../IPCContext'
 import { ActiveLanguageContext } from '../ActiveLanguageContext'
 import { TranslationAPI_Context } from './TranslationAPI_Context'
 
-export function TranslationAPI_Details() {
+export function TranslationAPI_Details({ canEdit }) {
     const { request } = useContext(IPCContext)
-    const { activeLanguageId, isOwnerOfLanguage } = useContext(ActiveLanguageContext)
+    const { activeLanguageId } = useContext(ActiveLanguageContext)
     const { yKey, setYKey, yFolderID, setYFolderID, gKey, setGKey, gProjectID, setGProjectID } = useContext(TranslationAPI_Context)
 
     function handleYKeyChange(e) {
@@ -42,17 +42,26 @@ export function TranslationAPI_Details() {
 
     return (
         <div>
-            {isOwnerOfLanguage && (
-                <form className='translation-api-details' onSubmit={handleSubmit} >
+            {canEdit && (
+                <form className='translation-api-details' onSubmit={handleSubmit}>
                     <p className='eyebrow'>Translation API details</p>
-                    <div className='translation-api-field'>Yandex Translate API key: <input value={yKey} onChange={handleYKeyChange} required /></div>
-                    <div className='translation-api-field'>Yandex Translate folder ID: <input value={yFolderID} onChange={handleYFolderIDChange} required /></div>
-                    <div className='translation-api-field'>Google Translate API key: <input value={gKey} onChange={handleGKeyChange} required /></div>
-                    <div className='translation-api-field'>Google Cloud Project ID: <input value={gProjectID} onChange={handleGProjectIDChange} required /></div>
-                    <button className='primary' type='submit'>Save</button>
+                    <div className='translation-api-field'>
+                        Yandex Translate API key: <input value={yKey} onChange={handleYKeyChange} required />
+                    </div>
+                    <div className='translation-api-field'>
+                        Yandex Translate folder ID: <input value={yFolderID} onChange={handleYFolderIDChange} required />
+                    </div>
+                    <div className='translation-api-field'>
+                        Google Translate API key: <input value={gKey} onChange={handleGKeyChange} required />
+                    </div>
+                    <div className='translation-api-field'>
+                        Google Cloud Project ID: <input value={gProjectID} onChange={handleGProjectIDChange} required />
+                    </div>
+                    <button className='primary' type='submit'>
+                        Save
+                    </button>
                 </form>
             )}
         </div>
     )
-
 }

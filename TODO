@@ -18,3 +18,5 @@
   * Studying by student(user), progress, correct/wrong
 * Translation API details does not show up for newly created language, due to isOwner is false. why? debug.
 * Kinds of polls: translation poll
+* Control panel for paired devices: revoke device - close access
+* rearrange UI, pages, initial setup, menu, styling

@@ -8,6 +8,7 @@ import { ActiveLanguageContext, ActiveLanguageProvider } from './ActiveLanguageC
 import { MediaFields } from './Media'
 import { Profile } from './Profile'
 import { Pairing } from './Pairing'
+import { LanguageRoles } from './LanguageRoles'
 import { TranslateWord } from './TranslateWord'
 import { TranslationAPI_Context, TranslationAPI_Provider } from './Translation/TranslationAPI_Context'
 import { TranslationAPI_Details } from './Translation/TranslationAPI_Details'
@@ -22,6 +23,9 @@ function App() {
     const [status, setStatus] = useState(`v${version}`)
     const [peerCount, setPeerCount] = useState(0)
     const [languages, setLanguages] = useState([])
+    const [languageRoles, setLanguageRoles] = useState([])
+    const [rolesLanguageId, setRolesLanguageId] = useState(null)
+    const [accountKey, setAccountKey] = useState(null)
     const [profile, setProfile] = useState({ nickname: '', avatar: null })
     const [profileLoaded, setProfileLoaded] = useState(false)
     const [pairingStatus, setPairingStatus] = useState(null)
@@ -41,10 +45,14 @@ function App() {
     const [updating, setUpdating] = useState(false)
 
     const { workerSpecifier, send, request, notice, setNotice } = useContext(IPCContext)
-    const { activeLanguageId, setActiveLanguageId, isOwnerOfLanguage, setIsOwnerOfLanguage } = useContext(ActiveLanguageContext)
+    const { activeLanguageId, setActiveLanguageId, setIsOwnerOfLanguage } = useContext(ActiveLanguageContext)
     const { setPolls, resetRefresher, clearRefresherTimeout } = useContext(PollContext)
 
     const activeLanguage = findActiveLanguage()
+    const currentRoles = rolesLanguageId === activeLanguageId ? languageRoles.find((user) => user.userKey === accountKey)?.roles || [] : []
+    const canManageLanguage = Boolean(activeLanguage?.isOwner || currentRoles.includes('administrator'))
+    const canCreateWords = canManageLanguage || currentRoles.includes('word-creator')
+    const canCreatePolls = canManageLanguage || !currentRoles.includes('banned-create-vote')
 
     const { setYKey, setYFolderID, setGKey, setGProjectID } = useContext(TranslationAPI_Context)
     const { setFoundTranslations } = useContext(SearchTranslationContext)
@@ -52,12 +60,8 @@ function App() {
 
     useEffect(() => {
         window.bridge.startWorker(workerSpecifier)
-        const offStdout = window.bridge.onWorkerStdout(workerSpecifier, (data) =>
-            console.log('worker stdout', '[', workerSpecifier, ']:', decoder.decode(data))
-        )
-        const offStderr = window.bridge.onWorkerStderr(workerSpecifier, (data) =>
-            console.error('worker stderr', '[', workerSpecifier, ']:', decoder.decode(data))
-        )
+        const offStdout = window.bridge.onWorkerStdout(workerSpecifier, (data) => console.log('worker stdout', '[', workerSpecifier, ']:', decoder.decode(data)))
+        const offStderr = window.bridge.onWorkerStderr(workerSpecifier, (data) => console.error('worker stderr', '[', workerSpecifier, ']:', decoder.decode(data)))
         const offIpc = window.bridge.onWorkerIPC(workerSpecifier, (data) => {
             const message = decoder.decode(data)
             let parsed
@@ -74,6 +78,14 @@ function App() {
                 }
                 const lang = parsed.data.find((language) => language.id === parsed.active)
                 setIsOwnerOfLanguage(lang ? lang.isOwner : false)
+            }
+            if (parsed?.type === 'language-roles') {
+                setLanguageRoles(parsed.roles)
+                setRolesLanguageId(parsed.languageId)
+                setAccountKey(parsed.accountKey)
+                const current = parsed.roles.find((user) => user.userKey === parsed.accountKey)
+                const admin = Boolean(current?.roles.includes('administrator'))
+                setLanguages((items) => items.map((language) => (language.id === parsed.languageId ? { ...language, isOwner: admin } : language)))
             }
             if (parsed?.type === 'polls') setPolls(Object.values(parsed.data))
             if (parsed?.type === 'error') setNotice(parsed.data)
@@ -199,13 +211,7 @@ function App() {
                     {peerCount} {peerCount === 1 ? 'peer' : 'peers'} connected · {status}
                 </span>
             </header>
-            {profileLoaded && (
-                <Profile
-                    profile={profile}
-                    onSave={(data) => request({ type: 'profile', data: { cmd: 'save', ...data } })}
-                    onError={(error) => setNotice(error.message)}
-                />
-            )}
+            {profileLoaded && <Profile profile={profile} onSave={(data) => request({ type: 'profile', data: { cmd: 'save', ...data } })} onError={(error) => setNotice(error.message)} />}
             {pairingStatus && (
                 <Pairing
                     status={pairingStatus}
@@ -218,7 +224,11 @@ function App() {
                     onError={(error) => setNotice(error.message)}
                 />
             )}
-            {notice && <p className='notice' role='alert'>{notice}</p>}
+            {notice && (
+                <p className='notice' role='alert'>
+                    {notice}
+                </p>
+            )}
             {updateReady && (
                 <button onClick={applyUpdate} disabled={updating}>
                     {updating ? 'Updating...' : 'Apply update'}
@@ -236,12 +246,23 @@ function App() {
                             <h2>Create a language</h2>
                             <input value={languageName} onChange={(event) => setLanguageName(event.target.value)} placeholder='Language name' required />
                             <textarea value={languageDescription} onChange={(event) => setLanguageDescription(event.target.value)} placeholder='Short description' rows='3' />
-                            <button className='primary' type='submit'>Create language</button>
+                            <button className='primary' type='submit'>
+                                Create language
+                            </button>
                         </form>
                         <form className='language-form' onSubmit={joinLanguage}>
                             <h2>Join a language</h2>
-                            <input value={joinKey} onChange={(event) => setJoinKey(event.target.value)} placeholder='Paste language key' pattern='[0-9a-fA-F]{64}' title='Use the 64-character language key' required />
-                            <button className='primary' type='submit'>Join language</button>
+                            <input
+                                value={joinKey}
+                                onChange={(event) => setJoinKey(event.target.value)}
+                                placeholder='Paste language key'
+                                pattern='[0-9a-fA-F]{64}'
+                                title='Use the 64-character language key'
+                                required
+                            />
+                            <button className='primary' type='submit'>
+                                Join language
+                            </button>
                         </form>
                     </div>
                     {languages.length > 0 && (
@@ -265,34 +286,84 @@ function App() {
                             <p>{activeLanguage.description}</p>
                         </div>
                         <div className='language-actions'>
-                            <button className='quiet' onClick={() => { setActiveLanguageId(null); setIsOwnerOfLanguage(false); setPolls([]) }}>All languages</button>
-                            <button className='share-key' onClick={() => navigator.clipboard?.writeText(activeLanguage.key)}>Copy key</button>
+                            <button
+                                className='quiet'
+                                onClick={() => {
+                                    setActiveLanguageId(null)
+                                    setIsOwnerOfLanguage(false)
+                                    setPolls([])
+                                }}
+                            >
+                                All languages
+                            </button>
+                            <button className='share-key' onClick={() => navigator.clipboard?.writeText(activeLanguage.key)}>
+                                Copy key
+                            </button>
                             <code>{activeLanguage.key}</code>
                         </div>
                     </div>
-                    <TranslationAPI_Details />
-                    <TranslateWord />
-                    <SaveTranslation />
+                    <TranslationAPI_Details canEdit={canManageLanguage} />
+                    <LanguageRoles
+                        accountKey={rolesLanguageId === activeLanguageId ? accountKey : null}
+                        canManage={canManageLanguage}
+                        roles={rolesLanguageId === activeLanguageId ? languageRoles : []}
+                        onAssign={(target, role, enabled) =>
+                            request({
+                                type: 'language',
+                                data: { cmd: 'set-role', languageId: activeLanguageId, target, role, enabled }
+                            })
+                        }
+                    />
+                    <TranslateWord canEdit={canCreateWords} />
+                    {canCreateWords && <SaveTranslation />}
                     <Polls />
-                    <form className='create-panel' onSubmit={createPoll}>
-                        <div><p className='eyebrow'>New poll</p><h2>Ask the community</h2></div>
-                        <input value={question.text} onChange={(event) => setQuestion((current) => ({ ...current, text: event.target.value }))} placeholder='What should we decide together?' required />
-                        <MediaFields value={question.media} onChange={(media) => setQuestion((current) => ({ ...current, media }))} onError={(error) => setNotice(error.message)} label='Question media' />
-                        {options.map((option, index) => (
-                            <div className='option-fields' key={index}>
-                                <input value={option.text} onChange={(event) => setOptions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, text: event.target.value } : item))} placeholder={`Option ${index + 1}`} required />
-                                <MediaFields value={option.media} onChange={(media) => setOptions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, media } : item))} onError={(error) => setNotice(error.message)} label={`Option ${index + 1} media`} />
+                    {canCreatePolls && (
+                        <form className='create-panel' onSubmit={createPoll}>
+                            <div>
+                                <p className='eyebrow'>New poll</p>
+                                <h2>Ask the community</h2>
                             </div>
-                        ))}
-                        <button type='button' onClick={() => setOptions((current) => [...current, { text: '', media: [] }])}>Add option</button>
-                        <button className='primary' type='submit'>Publish poll</button>
-                    </form>
+                            <input
+                                value={question.text}
+                                onChange={(event) => setQuestion((current) => ({ ...current, text: event.target.value }))}
+                                placeholder='What should we decide together?'
+                                required
+                            />
+                            <MediaFields
+                                value={question.media}
+                                onChange={(media) => setQuestion((current) => ({ ...current, media }))}
+                                onError={(error) => setNotice(error.message)}
+                                label='Question media'
+                            />
+                            {options.map((option, index) => (
+                                <div className='option-fields' key={index}>
+                                    <input
+                                        value={option.text}
+                                        onChange={(event) => setOptions((current) => current.map((item, itemIndex) => (itemIndex === index ? { ...item, text: event.target.value } : item)))}
+                                        placeholder={`Option ${index + 1}`}
+                                        required
+                                    />
+                                    <MediaFields
+                                        value={option.media}
+                                        onChange={(media) => setOptions((current) => current.map((item, itemIndex) => (itemIndex === index ? { ...item, media } : item)))}
+                                        onError={(error) => setNotice(error.message)}
+                                        label={`Option ${index + 1} media`}
+                                    />
+                                </div>
+                            ))}
+                            <button type='button' onClick={() => setOptions((current) => [...current, { text: '', media: [] }])}>
+                                Add option
+                            </button>
+                            <button className='primary' type='submit'>
+                                Publish poll
+                            </button>
+                        </form>
+                    )}
                 </>
             )}
         </main>
     )
 }
-
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>

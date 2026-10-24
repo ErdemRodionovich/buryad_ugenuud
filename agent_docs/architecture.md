@@ -50,7 +50,11 @@ The code is small — read it for the wiring; below are only the non-obvious fac
   selection. Poll creator authority uses a shared signing keypair stored in the
   user Autobase; the private key is replicated to paired devices. New poll
   creation and close operations are signed so each paired device can act for
-  the same account creator.
+  the same account creator. Language roles are stored in each language Autobase
+  by shared account-signing public key; role assignments and privileged writes
+  are signed and revalidated during deterministic replay. A language's creator
+  account is the initial administrator. Comments are not implemented yet, so
+  the ban-comment role is stored but has no comment action to restrict.
   Pairing requests and approvals are signed and expire after 24 hours. A
   request includes a random rendezvous secret, but only its hash is appended
   to the user Autobase. When both devices are online, Hyperswarm establishes a
