@@ -251,6 +251,30 @@ ipcMain.handle('google-translate', async (event, { text, apiKey, projectID, targ
     return 'Translation failed';
   }
 });
+ipcMain.handle('burlang-translate', async (event, { text }) => {
+  try {
+    const url = new URL('https://burlang.ru/api/v1/russian-word/translate')
+    url.searchParams.set('q', text)
+    const response = await fetch(url)
+
+    if (response.status === 404) return 'No translation found'
+    if (!response.ok) {
+      throw new Error(`Burlang returned HTTP ${response.status}`)
+    }
+
+    const data = await response.json()
+    if (!Array.isArray(data.translations)) {
+      throw new Error('Received unsupported response from Burlang')
+    }
+    return (
+      data.translations.map(({ value }) => value).filter(Boolean).join(', ') ||
+      'No translation found'
+    )
+  } catch (error) {
+    console.error('Burlang Translate error:', error)
+    return 'Translation failed'
+  }
+});
 
 function handleDeepLink(url) {
   console.log('deep link:', url)

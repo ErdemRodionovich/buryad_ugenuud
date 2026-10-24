@@ -1,7 +1,8 @@
-import { useState, useContext } from 'react'
+import { useState, useContext, useRef } from 'react'
 import './styles.css'
 import { gTranslate } from './Translation/gTranslate'
 import { yTranslate } from './Translation/yTranslate'
+import { burlangTranslate } from './Translation/burlangTranslate'
 import { TranslationAPI_Context } from './Translation/TranslationAPI_Context'
 import { SearchTranslationContext } from './SearchTranslationContext'
 import { MediaPreview } from './Media'
@@ -12,18 +13,22 @@ export function TranslateWord({ canEdit, canSuggest, onSuggestTranslation }) {
   const [word, setWord] = useState('')
   const [translationG, setTranslationG] = useState('')
   const [translationY, setTranslationY] = useState('')
+  const [translationB, setTranslationB] = useState('')
+  const translationRequestId = useRef(0)
 
   const { yKey, yFolderID, gKey, gProjectID } = useContext(TranslationAPI_Context)
   const { foundTranslations, setFoundTranslations } = useContext(SearchTranslationContext)
   const { request } = useContext(IPCContext)
   const { activeLanguageId } = useContext(ActiveLanguageContext)
 
-  const handleTranslate = async () => {
+  const handleTranslate = () => {
     const w = word.trim().toLowerCase()
     if (!w) return
+    const requestId = ++translationRequestId.current
     setFoundTranslations([])
     setTranslationG('')
     setTranslationY('')
+    setTranslationB('')
     request({
       type: 'search',
       data: {
@@ -31,12 +36,15 @@ export function TranslateWord({ canEdit, canSuggest, onSuggestTranslation }) {
         activeLanguageId
       }
     })
-    const [googleTranslation, yandexTranslation] = await Promise.all([
-      gTranslate(w, gKey, gProjectID),
-      yTranslate(w, yKey, yFolderID)
-    ])
-    setTranslationG(googleTranslation)
-    setTranslationY(yandexTranslation)
+    gTranslate(w, gKey, gProjectID).then((translation) => {
+      if (requestId === translationRequestId.current) setTranslationG(translation)
+    })
+    yTranslate(w, yKey, yFolderID).then((translation) => {
+      if (requestId === translationRequestId.current) setTranslationY(translation)
+    })
+    burlangTranslate(w).then((translation) => {
+      if (requestId === translationRequestId.current) setTranslationB(translation)
+    })
   }
 
   function editTranslation(translationID) {
@@ -64,7 +72,7 @@ export function TranslateWord({ canEdit, canSuggest, onSuggestTranslation }) {
           Translate
         </button>
       </div>
-      {translationG && (
+      {(translationG || translationY || translationB) && (
         <div className='translation-result'>
           {foundTranslations.map((t, index) => (
             <div className='found-translation' key={index}>
@@ -83,24 +91,35 @@ export function TranslateWord({ canEdit, canSuggest, onSuggestTranslation }) {
           Google translate: {translationG}
           <br />
           Yandex translate: {translationY}
+          <br />
+          Burlang: {translationB}
           {canSuggest && (
-            <button
-              type='button'
-              className='primary'
-              onClick={() =>
-                onSuggestTranslation({
-                  word: word.trim(),
-                  sourceLanguage: foundTranslations.find((item) => item.language)?.language || '',
-                  translations: [
-                    ...foundTranslations.map((item) => item.translation),
-                    translationG,
-                    translationY
-                  ].filter((translation) => translation && translation !== 'Translation failed')
-                })
-              }
-            >
-              Suggest translation
-            </button>
+            <>
+              <br />
+              <button
+                type='button'
+                className='primary'
+                onClick={() =>
+                  onSuggestTranslation({
+                    word: word.trim(),
+                    sourceLanguage: foundTranslations.find((item) => item.language)?.language || '',
+                    translations: [
+                      ...foundTranslations.map((item) => item.translation),
+                      translationG,
+                      translationY,
+                      translationB
+                    ].filter(
+                      (translation) =>
+                        translation &&
+                        translation !== 'Translation failed' &&
+                        translation !== 'No translation found'
+                    )
+                  })
+                }
+              >
+                Suggest translation
+              </button>
+            </>
           )}
         </div>
       )}

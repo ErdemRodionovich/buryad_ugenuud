@@ -19,11 +19,11 @@
   * Creation of exercises, steps
   * Studying by student(user), progress, correct/wrong
 * Translation API details does not show up for newly created language, due to isOwner is false. why? debug.
-* Kinds of polls: translation poll
-  * "Suggest translation" button in search translation panel, this button creates new translation poll for searched word
+* V - Kinds of polls: translation poll
+  * V - "Suggest translation" button in search translation panel, this button creates new translation poll for searched word
 * Control panel for paired devices: revoke device - close access
 * rearrange UI, pages, initial setup, menu, styling
-* Burlang API
+* V - Burlang API
 * i18n
 * language's code from translation api details
 * polls pagination, filters

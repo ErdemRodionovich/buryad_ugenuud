@@ -40,5 +40,8 @@ contextBridge.exposeInMainWorld('bridge', {
   },
   gTranslate: (text, apiKey, projectID, targetLang) => {
     return ipcRenderer.invoke('google-translate', { text, apiKey, projectID, targetLang });
+  },
+  burlangTranslate: (text) => {
+    return ipcRenderer.invoke('burlang-translate', { text });
   }
 })
