@@ -56,7 +56,7 @@ const translations = {
     'Comment media': 'Тайлбарай медиа',
     'Copy account key': 'Бүридхэлэй түлхюур буулгаха',
     'Copy approval': 'Баталалга буулгаха',
-    'Copy key': 'Түлхүүр буулгаха',
+    'Copy key': 'Түлхюүр буулгаха',
     'Copy request': 'Һуралта буулгаха',
     'Create a language': 'Хэлэ үүсхэхэ',
     'Create a profile for this device, or connect it to a profile you already use on another device.':
