@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { roleLabels } from './LanguageRoles'
 import { UserIdentity } from './UserIdentity'
+import { useI18n } from './I18nContext'
 
 export function UserPage({ user, canManage, roles, onBack, onRoleChange }) {
+  const { t } = useI18n()
   const [role, setRole] = useState('word-creator')
 
   function grantRole(event) {
@@ -13,7 +15,7 @@ export function UserPage({ user, canManage, roles, onBack, onRoleChange }) {
   return (
     <section className='user-page'>
       <button className='quiet user-page-back' type='button' onClick={onBack}>
-        ← Back
+        ← {t('Back')}
       </button>
       <div className='user-page-profile'>
         <UserIdentity
@@ -26,42 +28,44 @@ export function UserPage({ user, canManage, roles, onBack, onRoleChange }) {
       </div>
       {canManage && (
         <section className='user-page-roles'>
-          <h2>Language roles</h2>
+          <h2>{t('Language roles')}</h2>
           <form className='user-page-role-form' onSubmit={grantRole}>
             <select
-              aria-label='Role to grant'
+              aria-label={t('Role to grant')}
               value={role}
               onChange={(event) => setRole(event.target.value)}
             >
               {Object.entries(roleLabels).map(([value, label]) => (
                 <option key={value} value={value}>
-                  {label}
+                  {t(label)}
                 </option>
               ))}
             </select>
             <button className='primary' type='submit' disabled={roles.includes(role)}>
-              Grant role
+              {t('Grant role')}
             </button>
           </form>
-          <h3>Current roles</h3>
+          <h3>{t('Current roles')}</h3>
           {roles.length > 0 ? (
             <ul className='user-page-role-list'>
               {roles.map((userRole) => (
                 <li key={userRole}>
-                  <span>{roleLabels[userRole] || userRole}</span>
+                  <span>{t(roleLabels[userRole] || userRole)}</span>
                   <button
                     className='quiet'
                     type='button'
-                    aria-label={`Remove ${roleLabels[userRole] || userRole}`}
+                    aria-label={t('Remove {role}', {
+                      role: t(roleLabels[userRole] || userRole)
+                    })}
                     onClick={() => onRoleChange(user.userKey, userRole, false)}
                   >
-                    Remove
+                    {t('Remove')}
                   </button>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className='empty'>No roles assigned.</p>
+            <p className='empty'>{t('No roles assigned.')}</p>
           )}
         </section>
       )}

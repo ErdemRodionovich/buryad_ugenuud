@@ -23,10 +23,12 @@ import {
 } from './TranslationCreationContext'
 import { SearchTranslationContext, SearchTranslationProvider } from './SearchTranslationContext'
 import { ISO_languages } from './ISO_languages'
+import { I18nProvider, useI18n } from './I18nContext'
 
 const decoder = new TextDecoder('utf-8')
 
 function App() {
+  const { locale, setLocale, t, plural, languageName: getLanguageName } = useI18n()
   const [version] = useState(() => window.bridge.pkg().version)
   const [status, setStatus] = useState(`v${version}`)
   const [peerCount, setPeerCount] = useState(0)
@@ -212,7 +214,7 @@ function App() {
       await window.bridge.applyUpdate()
       await window.bridge.appAfterUpdate()
     } catch (error) {
-      setStatus('Update failed: ' + error.message)
+      setStatus(t('Update failed: {message}', { message: error.message }))
       setUpdateReady(false)
       setUpdating(false)
     }
@@ -261,7 +263,10 @@ function App() {
       translationOptions.push({ text: '', media: [] })
     }
     setPollKind('translation')
-    setQuestion({ text: `Suggest a translation for: ${cleanWord}`, media: [] })
+    setQuestion({
+      text: t('Suggest a translation for: {word}', { word: cleanWord }),
+      media: []
+    })
     setOptions(translationOptions)
     setTranslationPoll({ language: sourceLanguage, words: [cleanWord] })
     requestAnimationFrame(() => createPollPanel.current?.scrollIntoView({ behavior: 'smooth' }))
@@ -324,25 +329,42 @@ function App() {
           <p className='eyebrow'>Buryad Ugenuud</p>
           <h1>
             {updateReady
-              ? 'Update ready!'
+              ? t('Update ready!')
               : selectedUser?.nickname ||
                 (page === 'language' ? activeLanguage?.name : null) ||
-                'Language library'}
+                t('Language library')}
           </h1>
         </div>
         <span className='status'>
-          {peerCount} {peerCount === 1 ? 'peer' : 'peers'} connected · {status}
+          {peerCount} {plural('peer', peerCount)} {t('connected')} ·{' '}
+          {status === 'UPDATING...'
+            ? t('Updating...')
+            : status === 'Updating...'
+              ? t('Updating...')
+              : status}
         </span>
+        <label className='locale-picker'>
+          <span className='visually-hidden'>{t('Interface language')}</span>
+          <select
+            aria-label={t('Interface language')}
+            value={locale}
+            onChange={(event) => setLocale(event.target.value)}
+          >
+            <option value='en'>English</option>
+            <option value='bua'>Буряад</option>
+            <option value='ru'>Русский</option>
+          </select>
+        </label>
         {profileLoaded && profile.nickname && (
           <button
             className='menu-toggle'
             type='button'
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={t(menuOpen ? 'Close menu' : 'Open menu')}
             aria-expanded={menuOpen}
             aria-controls='main-navigation'
             onClick={() => setMenuOpen((open) => !open)}
           >
-            ☰ Menu
+            ☰ {t('Menu')}
           </button>
         )}
       </header>
@@ -351,16 +373,16 @@ function App() {
           <button
             className='menu-backdrop'
             type='button'
-            aria-label='Close menu'
+            aria-label={t('Close menu')}
             onClick={() => setMenuOpen(false)}
           />
-          <aside className='menu-drawer' id='main-navigation' aria-label='Main menu'>
+          <aside className='menu-drawer' id='main-navigation' aria-label={t('Main menu')}>
             <div className='menu-drawer-heading'>
-              <h2>Menu</h2>
+              <h2>{t('Menu')}</h2>
               <button
                 className='quiet'
                 type='button'
-                aria-label='Close menu'
+                aria-label={t('Close menu')}
                 onClick={() => setMenuOpen(false)}
               >
                 ×
@@ -375,7 +397,7 @@ function App() {
                   setMenuOpen(false)
                 }}
               >
-                Profile
+                {t('Profile')}
               </button>
               <button
                 className={page === 'pairing' ? 'active' : ''}
@@ -385,7 +407,7 @@ function App() {
                   setMenuOpen(false)
                 }}
               >
-                Pairing
+                {t('Pairing')}
               </button>
               <button
                 className={page === 'languages' ? 'active' : ''}
@@ -395,7 +417,7 @@ function App() {
                   setMenuOpen(false)
                 }}
               >
-                Languages
+                {t('Languages')}
               </button>
               {activeLanguage && canManageLanguage && (
                 <>
@@ -407,7 +429,7 @@ function App() {
                       setMenuOpen(false)
                     }}
                   >
-                    Translation API details
+                    {t('Translation API details')}
                   </button>
                   <button
                     className={page === 'language-members' ? 'active' : ''}
@@ -417,7 +439,7 @@ function App() {
                       setMenuOpen(false)
                     }}
                   >
-                    Language members
+                    {t('Language members')}
                   </button>
                 </>
               )}
@@ -430,7 +452,7 @@ function App() {
                     setMenuOpen(false)
                   }}
                 >
-                  Add new translation
+                  {t('Add new translation')}
                 </button>
               )}
             </nav>
@@ -444,25 +466,26 @@ function App() {
       )}
       {updateReady && (
         <button onClick={applyUpdate} disabled={updating}>
-          {updating ? 'Updating...' : 'Apply update'}
+          {updating ? t('Updating...') : t('Apply update')}
         </button>
       )}
       {!profileLoaded ? (
-        <p className='empty'>Loading your profile…</p>
+        <p className='empty'>{t('Loading your profile…')}</p>
       ) : !profile.nickname ? (
         <section className='welcome-panel'>
-          <p className='eyebrow'>Welcome</p>
-          <h2>Set up your profile or pair this device</h2>
+          <p className='eyebrow'>{t('Welcome')}</p>
+          <h2>{t('Set up your profile or pair this device')}</h2>
           <p>
-            Create a profile for this device, or connect it to a profile you already use on another
-            device.
+            {t(
+              'Create a profile for this device, or connect it to a profile you already use on another device.'
+            )}
           </p>
           <div className='welcome-actions'>
             <button className='primary' type='button' onClick={() => setPage('profile')}>
-              Set up profile
+              {t('Set up profile')}
             </button>
             <button className='quiet' type='button' onClick={() => setPage('pairing')}>
-              Pair this device
+              {t('Pair this device')}
             </button>
           </div>
           {page === 'profile' && (
@@ -492,7 +515,7 @@ function App() {
         <>
           {activeLanguage && page !== 'language' && !selectedUser && (
             <button className='quiet route-back' type='button' onClick={() => setPage('language')}>
-              ← Back to language
+              ← {t('Back to language')}
             </button>
           )}
           <div className={selectedUser ? 'route-content hidden' : 'route-content'}>
@@ -520,47 +543,47 @@ function App() {
             {page === 'languages' && (
               <section className='language-home'>
                 <div className='language-intro'>
-                  <p className='eyebrow'>Shared study spaces</p>
-                  <h2>Your languages</h2>
-                  <p>Create a language or join one with a shared key.</p>
+                  <p className='eyebrow'>{t('Shared study spaces')}</p>
+                  <h2>{t('Your languages')}</h2>
+                  <p>{t('Create a language or join one with a shared key.')}</p>
                 </div>
                 <div className='language-forms'>
                   <form className='language-form' onSubmit={createLanguage}>
-                    <h2>Create a language</h2>
+                    <h2>{t('Create a language')}</h2>
                     <input
                       value={languageName}
                       onChange={(event) => setLanguageName(event.target.value)}
-                      placeholder='Language name'
+                      placeholder={t('Language name')}
                       required
                     />
                     <textarea
                       value={languageDescription}
                       onChange={(event) => setLanguageDescription(event.target.value)}
-                      placeholder='Short description'
+                      placeholder={t('Short description')}
                       rows='3'
                     />
                     <button className='primary' type='submit'>
-                      Create language
+                      {t('Create language')}
                     </button>
                   </form>
                   <form className='language-form' onSubmit={joinLanguage}>
-                    <h2>Join a language</h2>
+                    <h2>{t('Join a language')}</h2>
                     <input
                       value={joinKey}
                       onChange={(event) => setJoinKey(event.target.value)}
-                      placeholder='Paste language key'
+                      placeholder={t('Paste language key')}
                       pattern='[0-9a-fA-F]{64}'
-                      title='Use the 64-character language key'
+                      title={t('Use the 64-character language key')}
                       required
                     />
                     <button className='primary' type='submit'>
-                      Join language
+                      {t('Join language')}
                     </button>
                   </form>
                 </div>
                 {languages.length > 0 && (
                   <div className='joined-list'>
-                    <h2>Your languages</h2>
+                    <h2>{t('Your languages')}</h2>
                     {languages.map((language) => (
                       <button
                         className='language-row'
@@ -568,7 +591,7 @@ function App() {
                         onClick={() => selectLanguage(language.id)}
                       >
                         <strong>{language.name}</strong>
-                        <span>{language.description || 'No description'}</span>
+                        <span>{language.description || t('No description')}</span>
                       </button>
                     ))}
                   </div>
@@ -579,7 +602,7 @@ function App() {
               <>
                 <div className='language-bar'>
                   <div>
-                    <p className='eyebrow'>Language</p>
+                    <p className='eyebrow'>{t('Language')}</p>
                     <h2>{activeLanguage.name}</h2>
                   </div>
                 </div>
@@ -590,7 +613,7 @@ function App() {
               <>
                 <div className='language-bar'>
                   <div>
-                    <p className='eyebrow'>Language members</p>
+                    <p className='eyebrow'>{t('Language members')}</p>
                     <h2>{activeLanguage.name}</h2>
                   </div>
                 </div>
@@ -613,7 +636,7 @@ function App() {
               <>
                 <div className='language-bar'>
                   <div>
-                    <p className='eyebrow'>Add new translation</p>
+                    <p className='eyebrow'>{t('Add new translation')}</p>
                     <h2>{activeLanguage.name}</h2>
                   </div>
                 </div>
@@ -624,19 +647,19 @@ function App() {
               <>
                 <div className='language-bar'>
                   <div>
-                    <p className='eyebrow'>Language</p>
+                    <p className='eyebrow'>{t('Language')}</p>
                     <h2>{activeLanguage.name}</h2>
                     <p>{activeLanguage.description}</p>
                   </div>
                   <div className='language-actions'>
                     <button className='quiet' onClick={() => setPage('languages')}>
-                      All languages
+                      {t('All languages')}
                     </button>
                     <button
                       className='share-key'
                       onClick={() => navigator.clipboard?.writeText(activeLanguage.key)}
                     >
-                      Copy key
+                      {t('Copy key')}
                     </button>
                     <code>{activeLanguage.key}</code>
                   </div>
@@ -656,21 +679,21 @@ function App() {
                 {canCreatePolls && (
                   <form className='create-panel' onSubmit={createPoll} ref={createPollPanel}>
                     <div>
-                      <p className='eyebrow'>New poll</p>
-                      <h2>Ask the community</h2>
+                      <p className='eyebrow'>{t('New poll')}</p>
+                      <h2>{t('Ask the community')}</h2>
                     </div>
                     <select
                       value={pollKind}
                       onChange={(event) => setPollKind(event.target.value)}
-                      aria-label='Poll kind'
+                      aria-label={t('Poll kind')}
                     >
-                      <option value='standard'>Standard poll</option>
-                      <option value='translation'>Translation poll</option>
+                      <option value='standard'>{t('Standard poll')}</option>
+                      <option value='translation'>{t('Translation poll')}</option>
                     </select>
                     {pollKind === 'translation' && (
                       <div className='translation-poll-fields'>
                         <label>
-                          Source language
+                          {t('Source language')}
                           <select
                             value={translationPoll.language}
                             onChange={(event) =>
@@ -682,11 +705,11 @@ function App() {
                             required
                           >
                             <option value='' disabled>
-                              Select source language
+                              {t('Select source language')}
                             </option>
                             {ISO_languages().map(({ code, name }) => (
                               <option key={code} value={code}>
-                                {name}
+                                {getLanguageName(code, name)}
                               </option>
                             ))}
                           </select>
@@ -703,7 +726,7 @@ function App() {
                                   )
                                 }))
                               }
-                              placeholder='Word to translate'
+                              placeholder={t('Word to translate')}
                               required
                             />
                             {index > 0 && (
@@ -718,7 +741,7 @@ function App() {
                                   }))
                                 }
                               >
-                                Remove word
+                                {t('Remove word')}
                               </button>
                             )}
                           </div>
@@ -732,7 +755,7 @@ function App() {
                             }))
                           }
                         >
-                          Add another word
+                          {t('Add another word')}
                         </button>
                       </div>
                     )}
@@ -741,14 +764,14 @@ function App() {
                       onChange={(event) =>
                         setQuestion((current) => ({ ...current, text: event.target.value }))
                       }
-                      placeholder='What should we decide together?'
+                      placeholder={t('What should we decide together?')}
                       required
                     />
                     <MediaFields
                       value={question.media}
                       onChange={(media) => setQuestion((current) => ({ ...current, media }))}
                       onError={(error) => setNotice(error.message)}
-                      label='Question media'
+                      label={t('Question media')}
                     />
                     {options.map((option, index) => (
                       <div className='option-fields' key={index}>
@@ -761,7 +784,7 @@ function App() {
                               )
                             )
                           }
-                          placeholder={`Option ${index + 1}`}
+                          placeholder={t('Option {number}', { number: index + 1 })}
                           required
                         />
                         <MediaFields
@@ -774,7 +797,7 @@ function App() {
                             )
                           }
                           onError={(error) => setNotice(error.message)}
-                          label={`Option ${index + 1} media`}
+                          label={t('Option {number} media', { number: index + 1 })}
                         />
                       </div>
                     ))}
@@ -782,10 +805,10 @@ function App() {
                       type='button'
                       onClick={() => setOptions((current) => [...current, { text: '', media: [] }])}
                     >
-                      Add option
+                      {t('Add option')}
                     </button>
                     <button className='primary' type='submit'>
-                      Publish poll
+                      {t('Publish poll')}
                     </button>
                   </form>
                 )}
@@ -820,18 +843,20 @@ function App() {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <IPCProvider>
-      <ActiveLanguageProvider>
-        <TranslationAPI_Provider>
-          <PollProvider>
-            <TranslationCreationProvider>
-              <SearchTranslationProvider>
-                <App />
-              </SearchTranslationProvider>
-            </TranslationCreationProvider>
-          </PollProvider>
-        </TranslationAPI_Provider>
-      </ActiveLanguageProvider>
-    </IPCProvider>
+    <I18nProvider>
+      <IPCProvider>
+        <ActiveLanguageProvider>
+          <TranslationAPI_Provider>
+            <PollProvider>
+              <TranslationCreationProvider>
+                <SearchTranslationProvider>
+                  <App />
+                </SearchTranslationProvider>
+              </TranslationCreationProvider>
+            </PollProvider>
+          </TranslationAPI_Provider>
+        </ActiveLanguageProvider>
+      </IPCProvider>
+    </I18nProvider>
   </StrictMode>
 )

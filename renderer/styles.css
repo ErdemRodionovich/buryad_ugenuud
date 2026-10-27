@@ -49,6 +49,25 @@ button:disabled {
   padding-bottom: 24px;
 }
 
+.locale-picker {
+  flex: 0 0 auto;
+}
+
+.locale-picker select {
+  min-width: 112px;
+  padding: 8px 10px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: #a34f2e;

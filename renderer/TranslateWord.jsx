@@ -8,14 +8,16 @@ import { SearchTranslationContext } from './SearchTranslationContext'
 import { MediaPreview } from './Media'
 import { IPCContext } from './IPCContext'
 import { ActiveLanguageContext } from './ActiveLanguageContext'
+import { useI18n } from './I18nContext'
 
 function hasTranslation(translation) {
   return (
-    translation && translation !== 'Translation failed' && translation !== 'No translation found'
+    translation && translation !== 'Translation failed' && translation !== 'No translation found' && translation != ''
   )
 }
 
 export function TranslateWord({ canEdit, canSuggest, onSuggestTranslation }) {
+  const { t } = useI18n()
   const [word, setWord] = useState('')
   const [translationG, setTranslationG] = useState('')
   const [translationY, setTranslationY] = useState('')
@@ -66,78 +68,79 @@ export function TranslateWord({ canEdit, canSuggest, onSuggestTranslation }) {
 
   return (
     <div className='translate-panel'>
-      <p className='eyebrow'>Translate</p>
+      <p className='eyebrow'>{t('Translate')}</p>
       <div className='translate-bar'>
         <input
           type='text'
           value={word}
           onChange={(e) => setWord(e.target.value)}
-          placeholder='Enter word to translate'
+          placeholder={t('Enter word to translate')}
         />
         <button className='primary' type='submit' onClick={handleTranslate}>
-          Translate
+          {t('Translate')}
         </button>
       </div>
       {(foundTranslations.length > 0 ||
         hasTranslation(translationG) ||
         hasTranslation(translationY) ||
         hasTranslation(translationB)) && (
-        <div className='translation-result'>
-          {foundTranslations.map((t, index) => (
-            <div className='found-translation' key={index}>
-              <p>{t.language}</p>
-              <p>{t.translation}</p>
-              <p>{t.description}</p>
-              <MediaPreview media={t.media} />
-              {canEdit && (
-                <button className='primary' onClick={() => editTranslation(t.translationID)}>
-                  Edit translation
-                </button>
-              )}
-            </div>
-          ))}
-          {hasTranslation(translationG) && (
-            <>
-              <br />
-              Google translate: {translationG}
-            </>
-          )}
-          {hasTranslation(translationY) && (
-            <>
-              <br />
-              Yandex translate: {translationY}
-            </>
-          )}
-          {hasTranslation(translationB) && (
-            <>
-              <br />
-              Burlang: {translationB}
-            </>
-          )}
-          {canSuggest && (
-            <>
-              <br />
-              <button
-                type='button'
-                className='primary'
-                onClick={() =>
-                  onSuggestTranslation({
-                    word: word.trim(),
-                    sourceLanguage: foundTranslations.find((item) => item.language)?.language || '',
-                    translations: [
-                      ...foundTranslations.map((item) => item.translation),
-                      translationG,
-                      translationY,
-                      translationB
-                    ].filter(hasTranslation)
-                  })
-                }
-              >
-                Suggest translation
-              </button>
-            </>
-          )}
-        </div>
+          <div className='translation-result'>
+            {foundTranslations.map((trans, index) => (
+              <div className='found-translation' key={index}>
+                <p>{trans.language}</p>
+                <p>{trans.translation}</p>
+                <p>{trans.description}</p>
+                <MediaPreview media={trans.media} />
+                {canEdit && (
+                  <button className='primary' onClick={() => editTranslation(trans.translationID)}>
+                    {t('Edit translation')}
+                  </button>
+                )}
+              </div>
+            ))}
+            {hasTranslation(translationG) && (
+              <>
+                <br />
+                {t('Google translate')}: {translationG}
+              </>
+            )}
+            {hasTranslation(translationY) && (
+              <>
+                <br />
+                {t('Yandex translate')}: {translationY}
+              </>
+            )}
+            {hasTranslation(translationB) && (
+              <>
+                <br />
+                {t('Burlang')}: {translationB}
+              </>
+            )}
+
+          </div>
+        )}
+      {canSuggest && (
+        <>
+          <br />
+          <button
+            type='button'
+            className='primary'
+            onClick={() =>
+              onSuggestTranslation({
+                word: word.trim(),
+                sourceLanguage: foundTranslations.find((item) => item.language)?.language || '',
+                translations: [
+                  ...foundTranslations.map((item) => item.translation),
+                  translationG,
+                  translationY,
+                  translationB
+                ].filter(hasTranslation)
+              })
+            }
+          >
+            {t('Suggest translation')}
+          </button>
+        </>
       )}
     </div>
   )

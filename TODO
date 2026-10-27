@@ -24,7 +24,10 @@
 * Control panel for paired devices: revoke device - close access
 * rearrange UI, pages, initial setup, menu, styling
 * V - Burlang API
-* i18n
+* V - i18n
 * language's code from translation api details
 * polls pagination, filters
 * E2E tests
+* android
+* iOS
+* publish

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useI18n } from './I18nContext'
 
 const maxUserAvatarBytes = 2 * 1024 * 1024
 const maxLanguageAvatarBytes = 80 * 1024
@@ -97,9 +98,21 @@ function avatarSource(avatar) {
 }
 
 export function Profile({ profile, onSave, onError }) {
+  const { t } = useI18n()
   const [nickname, setNickname] = useState(profile.nickname)
   const [avatar, setAvatar] = useState(profile.avatar)
   const [languageAvatar, setLanguageAvatar] = useState(profile.languageAvatar || null)
+
+  function reportError(error) {
+    const message = typeof error?.message === 'string' ? error.message : String(error)
+    const compressionError = message.match(/^Could not compress avatar image to (.+) or smaller$/)
+    const localizedMessage = compressionError
+      ? t('Could not compress avatar image to {size} or smaller', {
+          size: compressionError[1]
+        })
+      : t(message)
+    onError(new Error(localizedMessage))
+  }
 
   useEffect(() => {
     setNickname(profile.nickname)
@@ -123,7 +136,7 @@ export function Profile({ profile, onSave, onError }) {
       setAvatar(userAvatar)
       setLanguageAvatar(smallAvatar)
     } catch (error) {
-      onError(error)
+      reportError(error)
       event.target.value = ''
     }
   }
@@ -145,7 +158,7 @@ export function Profile({ profile, onSave, onError }) {
       setLanguageAvatar(compressedLanguageAvatar)
       onSave({ nickname, avatar, languageAvatar: compressedLanguageAvatar })
     } catch (error) {
-      onError(error)
+      reportError(error)
     }
   }
 
@@ -154,37 +167,41 @@ export function Profile({ profile, onSave, onError }) {
       <div className='profile-summary'>
         <div className='profile-avatar'>
           {avatar ? (
-            <img src={avatarSource(avatar)} alt={`${profile.nickname || nickname}'s avatar`} />
+            <img
+              src={avatarSource(avatar)}
+              alt={t('Avatar for {nickname}', { nickname: profile.nickname || nickname })}
+            />
           ) : (
             <span>{(profile.nickname || nickname).trim().slice(0, 1).toUpperCase() || '?'}</span>
           )}
         </div>
         <div>
-          <p className='eyebrow'>Your profile</p>
-          <strong>{profile.nickname || 'Set up your profile'}</strong>
+          <p className='eyebrow'>{t('Your profile')}</p>
+          <strong>{profile.nickname || t('Set up your profile')}</strong>
         </div>
       </div>
       <form className='profile-form' onSubmit={submit}>
         <label>
-          Nickname
+          {t('Nickname')}
           <input
             value={nickname}
             onChange={(event) => setNickname(event.target.value)}
             maxLength={40}
-            placeholder='Choose a nickname'
+            placeholder={t('Choose a nickname')}
             required
           />
         </label>
         <label>
-          Avatar
+          {t('Avatar')}
           <input
             type='file'
             accept='image/png,image/jpeg,image/webp,image/gif,image/heic,image/heif,.heic,.heif'
             onChange={selectAvatar}
           />
           <small>
-            PNG, JPEG, WebP, GIF, or HEIC; up to 2 MiB is saved to your profile, with an 80 KiB copy
-            for each language.
+            {t(
+              'PNG, JPEG, WebP, GIF, or HEIC; up to 2 MiB is saved to your profile, with an 80 KiB copy for each language.'
+            )}
           </small>
         </label>
         <div className='profile-avatar-actions'>
@@ -197,11 +214,11 @@ export function Profile({ profile, onSave, onError }) {
                 setLanguageAvatar(null)
               }}
             >
-              Remove avatar
+              {t('Remove avatar')}
             </button>
           )}
           <button className='primary' type='submit'>
-            Save profile
+            {t('Save profile')}
           </button>
         </div>
       </form>

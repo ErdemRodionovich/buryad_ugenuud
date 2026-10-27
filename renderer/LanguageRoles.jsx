@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { UserIdentity } from './UserIdentity'
+import { useI18n } from './I18nContext'
 
 export const roleLabels = {
   administrator: 'Administrator',
@@ -17,6 +18,7 @@ export function LanguageRoles({
   onAssign,
   onOpenUser
 }) {
+  const { t } = useI18n()
   const [target, setTarget] = useState('')
   const [role, setRole] = useState('word-creator')
   const [selectedRoles, setSelectedRoles] = useState({})
@@ -41,23 +43,23 @@ export function LanguageRoles({
 
   return (
     <section className='language-roles'>
-      <p className='eyebrow'>Language access</p>
-      {canManage && <h2>Manage roles</h2>}
+      <p className='eyebrow'>{t('Language access')}</p>
+      {canManage && <h2>{t('Manage roles')}</h2>}
       <p>
         {canManage
-          ? 'Grant or remove roles for language members, or assign a role using an account key.'
-          : 'Share your account key with a language administrator to be assigned roles.'}
+          ? t('Grant or remove roles for language members, or assign a role using an account key.')
+          : t('Share your account key with a language administrator to be assigned roles.')}
       </p>
       <div className='role-account-key'>
-        <strong>Your account key</strong>
-        <code>{accountKey || 'Loading account key…'}</code>
+        <strong>{t('Your account key')}</strong>
+        <code>{accountKey || t('Loading account key…')}</code>
         <button
           className='quiet'
           type='button'
           disabled={!accountKey}
           onClick={() => navigator.clipboard?.writeText(accountKey)}
         >
-          Copy account key
+          {t('Copy account key')}
         </button>
       </div>
       {canManage && (
@@ -66,25 +68,27 @@ export function LanguageRoles({
             <input
               value={target}
               onChange={(event) => setTarget(event.target.value)}
-              placeholder='Account key (64 hexadecimal characters)'
+              placeholder={t('Account key (64 hexadecimal characters)')}
               pattern='[0-9a-fA-F]{64}'
-              title='Use the 64-character account key'
+              title={t('Use the 64-character account key')}
               required
             />
             <select value={role} onChange={(event) => setRole(event.target.value)}>
               {Object.entries(roleLabels).map(([value, label]) => (
                 <option key={value} value={value}>
-                  {label}
+                  {t(label)}
                 </option>
               ))}
             </select>
             <button className='primary' type='submit'>
-              Assign role
+              {t('Assign role')}
             </button>
           </form>
-          <h3 className='role-list-heading'>Members and assigned roles</h3>
+          <h3 className='role-list-heading'>{t('Members and assigned roles')}</h3>
           <div className='role-list'>
-            {roleUsers.size === 0 && <p className='empty'>No members or role assignments yet.</p>}
+            {roleUsers.size === 0 && (
+              <p className='empty'>{t('No members or role assignments yet.')}</p>
+            )}
             {[...roleUsers.values()].map(({ userKey, roles: userRoles }) => (
               <div className='role-user' key={userKey}>
                 {membersByKey.has(userKey) ? (
@@ -100,10 +104,13 @@ export function LanguageRoles({
                 <div className='role-badges'>
                   {userRoles.map((userRole) => (
                     <span className='role-badge' key={userRole}>
-                      {roleLabels[userRole] || userRole}
+                      {t(roleLabels[userRole] || userRole)}
                       <button
                         type='button'
-                        aria-label={`Remove ${roleLabels[userRole] || userRole} from ${userKey}`}
+                        aria-label={t('Remove {role} from {user}', {
+                          role: t(roleLabels[userRole] || userRole),
+                          user: userKey
+                        })}
                         onClick={() => onAssign(userKey, userRole, false)}
                       >
                         ×
@@ -119,7 +126,7 @@ export function LanguageRoles({
                   }}
                 >
                   <select
-                    aria-label={`Role to grant to ${userKey}`}
+                    aria-label={t('Role to grant to {user}', { user: userKey })}
                     value={selectedRoles[userKey] || 'word-creator'}
                     onChange={(event) =>
                       setSelectedRoles((current) => ({
@@ -130,7 +137,7 @@ export function LanguageRoles({
                   >
                     {Object.entries(roleLabels).map(([value, label]) => (
                       <option key={value} value={value}>
-                        {label}
+                        {t(label)}
                       </option>
                     ))}
                   </select>
@@ -139,7 +146,7 @@ export function LanguageRoles({
                     type='submit'
                     disabled={userRoles.includes(selectedRoles[userKey] || 'word-creator')}
                   >
-                    Grant role
+                    {t('Grant role')}
                   </button>
                 </form>
               </div>

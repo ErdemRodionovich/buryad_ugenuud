@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import emojiGroups from 'unicode-emoji-json/data-by-group.json'
 import emojiComponents from 'unicode-emoji-json/data-emoji-components.json'
+import { useI18n } from './I18nContext'
 
 const skinTones = Object.entries(emojiComponents)
   .filter(([name]) => name.endsWith('_skin_tone'))
@@ -51,6 +52,7 @@ const groupedEmojiOptions = emojiGroups.map((group) => ({
 }))
 
 export function EmojiPicker({ onSelect }) {
+  const { t } = useI18n()
   const [search, setSearch] = useState('')
   const normalizedSearch = search.trim().toLocaleLowerCase()
 
@@ -58,8 +60,8 @@ export function EmojiPicker({ onSelect }) {
     <div className='emoji-picker-panel'>
       <input
         type='search'
-        aria-label='Search emojis'
-        placeholder='Search emojis'
+        aria-label={t('Search emojis')}
+        placeholder={t('Search emojis')}
         value={search}
         onChange={(event) => setSearch(event.target.value)}
       />
@@ -71,7 +73,7 @@ export function EmojiPicker({ onSelect }) {
           if (emojis.length === 0) return null
           return (
             <section className='emoji-group' key={group.slug}>
-              <h4>{group.name}</h4>
+              <h4>{t(group.name)}</h4>
               <div className='emoji-picker-options'>
                 {emojis.map(({ emoji, name }) => (
                   <button

@@ -5,6 +5,7 @@ import { PollContext } from './PollContext'
 import { ActiveLanguageContext } from './ActiveLanguageContext'
 import { MediaFields, MediaPreview } from './Media'
 import { UserIdentity } from './UserIdentity'
+import { useI18n } from './I18nContext'
 
 const EmojiPicker = lazy(() =>
   import('./EmojiPicker').then((module) => ({ default: module.EmojiPicker }))
@@ -14,6 +15,10 @@ function pollText(value) {
   return typeof value === 'string' ? value : value?.text || ''
 }
 
+function totalVotes(poll) {
+  return Object.values(poll.votes || {}).reduce((sum, count) => sum + count, 0)
+}
+
 export function Polls({
   canComment,
   canManageLanguage,
@@ -21,6 +26,7 @@ export function Polls({
   onMakeTranslation,
   onOpenUser
 }) {
+  const { locale, t, plural } = useI18n()
   const { polls, commentsByPoll, selectedPollId, setSelectedPollId, refresh } =
     useContext(PollContext)
   const { request, setNotice } = useContext(IPCContext)
@@ -116,12 +122,12 @@ export function Polls({
     <section className='workspace'>
       <div className='poll-list'>
         <div className='section-heading'>
-          <h2>Open conversations</h2>
+          <h2>{t('Open conversations')}</h2>
           <button className='quiet' onClick={refresh}>
-            Refresh
+            {t('Refresh')}
           </button>
         </div>
-        {polls.length === 0 && <p className='empty'>No polls yet. Start the first one.</p>}
+        {polls.length === 0 && <p className='empty'>{t('No polls yet. Start the first one.')}</p>}
         {polls.map((poll) => (
           <button
             className={`poll-row ${poll.id === selectedPollId ? 'active' : ''}`}
@@ -130,9 +136,9 @@ export function Polls({
           >
             <strong>{pollText(poll.question)}</strong>
             <span>
-              {poll.kind === 'translation' ? 'Translation poll · ' : ''}
-              {poll.closed ? 'Closed' : 'Open'} ·{' '}
-              {Object.values(poll.votes || {}).reduce((sum, count) => sum + count, 0)} votes
+              {poll.kind === 'translation' ? `${t('Translation poll')} · ` : ''}
+              {poll.closed ? t('Closed') : t('Open')} · {totalVotes(poll)}{' '}
+              {plural('vote', totalVotes(poll))}
             </span>
           </button>
         ))}
@@ -141,22 +147,24 @@ export function Polls({
         {selectedPoll ? (
           <>
             <p className='eyebrow'>
-              {selectedPoll.kind === 'translation' ? 'Translation poll · ' : ''}
+              {selectedPoll.kind === 'translation' ? `${t('Translation poll')} · ` : ''}
               {selectedPoll.closed
-                ? 'Voting closed'
+                ? t('Voting closed')
                 : selectedPoll.hasVoted
-                  ? 'You have voted'
-                  : 'Cast your vote'}
+                  ? t('You have voted')
+                  : t('Cast your vote')}
             </p>
             <h2>{pollText(selectedPoll.question)}</h2>
             {selectedPoll.kind === 'translation' && selectedPoll.translationDetails && (
               <p className='translation-poll-prompt'>
-                Translate from {selectedPoll.translationDetails.languageOfWordForTranslation}:{' '}
-                {selectedPoll.translationDetails.wordsForTranslation.join(', ')}
+                {t('Translate from {language}: {words}', {
+                  language: selectedPoll.translationDetails.languageOfWordForTranslation,
+                  words: selectedPoll.translationDetails.wordsForTranslation.join(', ')
+                })}
               </p>
             )}
             <div className='poll-creator'>
-              <span className='eyebrow'>Created by</span>
+              <span className='eyebrow'>{t('Created by')}</span>
               <UserIdentity
                 nickname={selectedPoll.creatorProfile?.nickname}
                 avatar={selectedPoll.creatorProfile?.avatar}
@@ -195,7 +203,7 @@ export function Polls({
                 className='primary'
                 onClick={() => onMakeTranslation(selectedPoll, winningTranslationOption)}
               >
-                Make translation
+                {t('Make translation')}
               </button>
             )}
             {!selectedPoll.closed && selectedPoll.canClose && (
@@ -208,12 +216,12 @@ export function Polls({
                   })
                 }
               >
-                Close voting
+                {t('Close voting')}
               </button>
             )}
             <section className='poll-comments'>
               <div className='section-heading'>
-                <h3>Comments</h3>
+                <h3>{t('Comments')}</h3>
                 <button
                   className='quiet'
                   onClick={() =>
@@ -227,11 +235,11 @@ export function Polls({
                     })
                   }
                 >
-                  Refresh comments
+                  {t('Refresh comments')}
                 </button>
               </div>
               {comments.length === 0 ? (
-                <p className='empty'>No comments yet. Start the discussion.</p>
+                <p className='empty'>{t('No comments yet. Start the discussion.')}</p>
               ) : (
                 <div className='comment-list'>
                   {comments.map((comment) => (
@@ -244,7 +252,9 @@ export function Polls({
                           onOpenUser={onOpenUser}
                         />
                         <time dateTime={new Date(comment.createdAt).toISOString()}>
-                          {new Date(comment.createdAt).toLocaleString()}
+                          {new Date(comment.createdAt).toLocaleString(
+                            locale === 'ru' ? 'ru-RU' : locale === 'bua' ? 'bua-RU' : 'en-US'
+                          )}
                         </time>
                       </div>
                       <p>{comment.text}</p>
@@ -277,10 +287,10 @@ export function Polls({
                               )
                             }
                           >
-                            Add reaction
+                            {t('Add reaction')}
                           </button>
                           {reactionPickerCommentId === comment.commentId && (
-                            <Suspense fallback={<p className='empty'>Loading emojis…</p>}>
+                            <Suspense fallback={<p className='empty'>{t('Loading emojis…')}</p>}>
                               <EmojiPicker
                                 onSelect={(emoji) => {
                                   toggleReaction(comment, emoji)
@@ -296,7 +306,7 @@ export function Polls({
                             type='button'
                             onClick={() => removeComment(comment)}
                           >
-                            Remove comment
+                            {t('Remove comment')}
                           </button>
                         )}
                       </div>
@@ -310,7 +320,7 @@ export function Polls({
                     ref={commentInput}
                     value={commentText}
                     onChange={(event) => setCommentText(event.target.value)}
-                    placeholder='Write a comment'
+                    placeholder={t('Write a comment')}
                     rows='3'
                     required
                   />
@@ -321,10 +331,10 @@ export function Polls({
                       aria-expanded={emojiPickerOpen}
                       onClick={() => setEmojiPickerOpen((open) => !open)}
                     >
-                      Add emoji
+                      {t('Add emoji')}
                     </button>
                     {emojiPickerOpen && (
-                      <Suspense fallback={<p className='empty'>Loading emojis…</p>}>
+                      <Suspense fallback={<p className='empty'>{t('Loading emojis…')}</p>}>
                         <EmojiPicker onSelect={insertEmoji} />
                       </Suspense>
                     )}
@@ -333,23 +343,23 @@ export function Polls({
                     value={commentMedia}
                     onChange={setCommentMedia}
                     onError={(error) => setNotice(error.message)}
-                    label='Comment media'
+                    label={t('Comment media')}
                   />
                   <button className='primary' type='submit'>
-                    Add comment
+                    {t('Add comment')}
                   </button>
                 </form>
               ) : (
                 <p className='empty'>
                   {selectedPoll.closed
-                    ? 'This poll is closed. Comments are no longer accepted.'
-                    : 'You are not allowed to comment in this language.'}
+                    ? t('This poll is closed. Comments are no longer accepted.')
+                    : t('You are not allowed to comment in this language.')}
                 </p>
               )}
             </section>
           </>
         ) : (
-          <p className='empty'>Select a poll to see the question and current results.</p>
+          <p className='empty'>{t('Select a poll to see the question and current results.')}</p>
         )}
       </div>
     </section>
