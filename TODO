@@ -18,6 +18,10 @@
 * Study plans (Courses):
   * Creation of exercises, steps
   * Studying by student(user), progress, correct/wrong
+  * Moneytisation - creator can earn money - via restricted access?
+  * Gamification
+  * Daily events, goals
+  * Leaderboard
 * Translation API details does not show up for newly created language, due to isOwner is false. why? debug.
 * V - Kinds of polls: translation poll
   * V - "Suggest translation" button in search translation panel, this button creates new translation poll for searched word
@@ -27,7 +31,11 @@
 * V - i18n
 * language's code from translation api details
 * polls pagination, filters
+* QR code in pairing
 * E2E tests
 * android
 * iOS
 * publish
+* Windows store
+* Ubuntu app store
+* Ask for review
