@@ -11,7 +11,7 @@ Then languages screen opens. If user already had opened some language before, th
 
 There is a menu with entries:
   * Profile - opens user's profile screen where user can change nickname and avatar
-  * Pairing - opens pairing screen where user can see the list of paired devices, pair a new device, and revoke access for an already paired device; a revoked device clears its local profile and language data and restarts
+  * Pairing - opens pairing screen where user can see the list of paired devices, pair a new device using QR scan/display or manual copy/paste fallback codes, and revoke access for an already paired device; a revoked device clears its local profile and language data and restarts
   * Languages - opens screen with list of languages (Your languages), where user can join new language or create new own one
   * Translation API details (If language is open, activeLanguageId is set, and user is admin in opened language) - opens screen for translation API details, where user can see and edit these details
   * Language members (If language is open, activeLanguageId is set, and user is admin in opened language) - where user can see list of members and grant or remove roles for members

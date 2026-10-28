@@ -1,6 +1,6 @@
 /* global MAIN_WINDOW_VITE_DEV_SERVER_URL */
 
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, session } = require('electron')
 const os = require('os')
 const path = require('path')
 const fs = require('fs')
@@ -312,6 +312,15 @@ if (!lock) {
   })
 
   app.whenReady().then(() => {
+    session.defaultSession.setPermissionRequestHandler(
+      (_webContents, permission, callback, details) => {
+        callback(
+          permission === 'media' &&
+            details.mediaTypes?.includes('video') &&
+            !details.mediaTypes.includes('audio')
+        )
+      }
+    )
     createWindow().catch((err) => {
       console.error('Failed to create window:', err)
       app.quit()

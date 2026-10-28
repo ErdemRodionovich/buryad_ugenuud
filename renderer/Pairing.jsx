@@ -1,5 +1,116 @@
-import { useState } from 'react'
+import { Html5QrcodeScanner } from 'html5-qrcode'
+import QRCode from 'qrcode'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from './I18nContext'
+
+function PairingQrCode({ code, label, onError }) {
+  const { t } = useI18n()
+  const [image, setImage] = useState('')
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
+
+  useEffect(() => {
+    let active = true
+    setImage('')
+    QRCode.toDataURL(code, { errorCorrectionLevel: 'H', margin: 2, width: 240 })
+      .then((dataUrl) => {
+        if (active) setImage(dataUrl)
+      })
+      .catch((error) => onErrorRef.current(error))
+
+    return () => {
+      active = false
+    }
+  }, [code])
+
+  return image ? (
+    <img className='pairing-qr' src={image} alt={t(label)} />
+  ) : (
+    <small>{t('Generating QR code...')}</small>
+  )
+}
+
+function PairingScanner({ onScan, onError, onClose }) {
+  const { t } = useI18n()
+
+  const callbacksRef = useRef({ onScan, onError, onClose })
+  callbacksRef.current = { onScan, onError, onClose }
+
+  const [message, setMessage] = useState('')
+  const scannerRef = useRef(null)
+  const isScanning = useRef(false)
+
+  useEffect(() => {
+    if (scannerRef.current) {
+      return
+    }
+    setMessage(prev => prev + '\nScanner initializing...')
+
+    const scanner = new Html5QrcodeScanner('qr-reader', {
+      fps: 10,                            // Частота кадров в секунду
+      qrbox: { width: 250, height: 250 }, // Размер рамки сканирования
+      rememberLastUsedCamera: true,       // Запоминать выбранную камеру
+      supportedScanTypes: [0]             // 0 = только камера (Html5QrcodeScanType.SCAN_TYPE_CAMERA)
+    }, false)
+
+    scannerRef.current = scanner
+    isScanning.current = true
+
+    scanner.render(
+      (decodedText) => {
+        setMessage(prev => prev + '\nQR code detected')
+
+        if (scannerRef.current) {
+          scannerRef.current.clear()
+            .then(() => {
+              callbacksRef.current.onScan(decodedText)
+            })
+            .catch(err => console.error('Error clearing scanner:', err))
+            .finally(() => {
+              scannerRef.current = null
+              isScanning.current = false
+            })
+        }
+      },
+      (error) => {
+        if (error && error.includes('No MultiFormat Readers were able to detect the code')) {
+          return
+        }
+
+        setMessage(prev => prev + `\nScanner feedback: ${error}`)
+      }
+    )
+
+    setMessage(prev => prev + '\nScanner active')
+
+    return () => {
+      setMessage(prev => prev + '\nStopping scanner...')
+
+      if (scannerRef.current && isScanning.current === false) {
+        scannerRef.current.clear()
+          .then(() => {
+            setMessage(prev => prev + '\nScanner stopped successfully')
+          })
+          .catch((err) => {
+            console.warn('Scanner clear failed or already cleared:', err)
+          })
+          .finally(() => scannerRef.current = null)
+      }
+    }
+  }, [])
+
+  return (
+    <div className='pairing-scanner'>
+      <div id="qr-reader" style={{ width: '100%', maxWidth: '500px', margin: '0 auto' }}></div>
+
+      <button type='button' className='quiet' onClick={onClose}>
+        {t('Close scanner')}
+      </button>
+
+      <pre style={{ textAlign: 'left', fontSize: '12px', marginTop: '10px' }}>{message}</pre>
+    </div>
+  )
+}
 
 function expiresAt(code, locale) {
   try {
@@ -7,8 +118,8 @@ function expiresAt(code, locale) {
     const timestamp = parsed.expiresAt
     return Number.isSafeInteger(timestamp)
       ? new Date(timestamp).toLocaleString(
-          locale === 'ru' ? 'ru-RU' : locale === 'bua' ? 'bua-RU' : 'en-US'
-        )
+        locale === 'ru' ? 'ru-RU' : locale === 'bua' ? 'bua-RU' : 'en-US'
+      )
       : ''
   } catch {
     return ''
@@ -29,6 +140,9 @@ export function Pairing({
   const { locale, t, plural } = useI18n()
   const [requestInput, setRequestInput] = useState('')
   const [approvalInput, setApprovalInput] = useState('')
+  const [showRequestQr, setShowRequestQr] = useState(false)
+  const [showApprovalQr, setShowApprovalQr] = useState(false)
+  const [scannerTarget, setScannerTarget] = useState(null)
   const currentRequestId = (() => {
     try {
       return JSON.parse(requestCode || '').requestId
@@ -60,6 +174,35 @@ export function Pairing({
   function complete(event) {
     event.preventDefault()
     onComplete(approvalInput)
+  }
+
+  function scannedCode(value) {
+    if (value.length > 4096) {
+      onError(new Error(t('Scanned pairing QR code is too large')))
+      setScannerTarget(null)
+      return
+    }
+
+    let scannedType
+    try {
+      scannedType = JSON.parse(value).type
+    } catch {
+      onError(new Error(t('Scanned QR code is not a pairing code')))
+      setScannerTarget(null)
+      return
+    }
+    if (
+      (scannerTarget === 'request' && scannedType !== 'request') ||
+      (scannerTarget === 'approval' && scannedType !== 'approval')
+    ) {
+      onError(new Error(t('This QR code is for the wrong pairing step')))
+      setScannerTarget(null)
+      return
+    }
+
+    if (scannerTarget === 'request') setRequestInput(value)
+    if (scannerTarget === 'approval') setApprovalInput(value)
+    setScannerTarget(null)
   }
 
   const activeDeviceCount = status?.devices?.filter((device) => device.active).length || 0
@@ -146,6 +289,20 @@ export function Pairing({
               <button type='button' className='quiet' onClick={() => copyCode(requestCode)}>
                 {t('Copy request')}
               </button>
+              <button
+                type='button'
+                className='quiet'
+                onClick={() => setShowRequestQr((visible) => !visible)}
+              >
+                {t(showRequestQr ? 'Hide QR code' : 'Show QR code')}
+              </button>
+              {showRequestQr && (
+                <PairingQrCode
+                  code={requestCode}
+                  label='QR code for pairing request'
+                  onError={onError}
+                />
+              )}
               <small>
                 {t('Request expires: {date}', { date: expiresAt(requestCode, locale) })}
               </small>
@@ -156,9 +313,19 @@ export function Pairing({
           <h3>{t('On an authorized device: approve')}</h3>
           <p>
             {t(
-              "Paste the new device's request and approve it. If both devices are online, the signed approval is sent over a direct encrypted connection; the code remains a fallback."
+              "Scan the new device's request QR code or paste its request, then approve it. If both devices are online, the signed approval is sent over a direct encrypted connection; otherwise scan the approval QR code or paste its code."
             )}
           </p>
+          <button type='button' className='quiet' onClick={() => setScannerTarget('request')}>
+            {t('Scan pairing request QR code')}
+          </button>
+          {scannerTarget === 'request' && (
+            <PairingScanner
+              onScan={scannedCode}
+              onError={onError}
+              onClose={() => setScannerTarget(null)}
+            />
+          )}
           <textarea
             value={requestInput}
             onChange={(event) => setRequestInput(event.target.value)}
@@ -184,6 +351,20 @@ export function Pairing({
               <button type='button' className='quiet' onClick={() => copyCode(approvalCode)}>
                 {t('Copy approval')}
               </button>
+              <button
+                type='button'
+                className='quiet'
+                onClick={() => setShowApprovalQr((visible) => !visible)}
+              >
+                {t(showApprovalQr ? 'Hide QR code' : 'Show QR code')}
+              </button>
+              {showApprovalQr && (
+                <PairingQrCode
+                  code={approvalCode}
+                  label='QR code for pairing approval'
+                  onError={onError}
+                />
+              )}
               <small>
                 {t('Approval expires: {date}', { date: expiresAt(approvalCode, locale) })}
               </small>
@@ -197,6 +378,16 @@ export function Pairing({
               'If the direct connection succeeds, this device joins automatically. Otherwise paste the 24-hour approval code here. Pairing replaces the current local profile and language list.'
             )}
           </p>
+          <button type='button' className='quiet' onClick={() => setScannerTarget('approval')}>
+            {t('Scan pairing approval QR code')}
+          </button>
+          {scannerTarget === 'approval' && (
+            <PairingScanner
+              onScan={scannedCode}
+              onError={onError}
+              onClose={() => setScannerTarget(null)}
+            />
+          )}
           <textarea
             value={approvalInput}
             onChange={(event) => setApprovalInput(event.target.value)}

@@ -62,6 +62,12 @@ const translations = {
     'Create a profile for this device, or connect it to a profile you already use on another device.':
       'Энэ түхеэрэмжэдэ бүридхэл үүсхэхэ, али ондооһоо холбохо.',
     'Create pairing request': 'Холболгын һуралга үүсхэхэ',
+    'Close scanner': 'Уншагша хааха',
+    'Generating QR code...': 'QR код бэлдэгдэнэ...',
+    'Scanned pairing QR code is too large': 'Уншаһан QR код даан ехэ байна',
+    'Scanned QR code is not a pairing code': 'Уншаһан QR код холболгын код бэшэ',
+    'This QR code is for the wrong pairing step':
+      'Энэ QR код буруу холболгын байна',
     'Create the first one': 'Түрүүшын асуулга үүсхэхэ',
     'Create language': 'Хэлэ үүсхэхэ',
     'Description or context': 'Удха, тайлбари',
@@ -99,6 +105,12 @@ const translations = {
     Pairing: 'Холболго',
     'Pair this device': 'Энэ түхеэрэмжэ холбохо',
     'Paired devices': 'Холбогдоһон түхеэрэмжэнүүд',
+    'Hide QR code': 'QR код нюуха',
+    'Show QR code': 'QR код харуулха',
+    'Scan pairing approval QR code': 'Холболгын баталалгын QR код уншаха',
+    'Scan pairing request QR code': 'Холболгын һуралгын QR код уншаха',
+    'QR code for pairing approval': 'Холболгын баталалгын QR код',
+    'QR code for pairing request': 'Холболгын һуралгын QR код',
     'Paste language key': 'Хэлэнэй түлхюур бэшэгты',
     'Paste pairing approval': 'Холболгын баталалга бэшэгты',
     'Paste pairing request': 'Холболгын һуралга',
@@ -210,8 +222,8 @@ const translations = {
     'Option {number} media': 'Шэлэлтэ {number}-эй медиа',
     'Pairing approval code': 'Холболгын баталалгын код',
     'Pairing request code': 'Холболгын һуралтын код',
-    "Paste the new device's request and approve it. If both devices are online, the signed approval is sent over a direct encrypted connection; the code remains a fallback.":
-      'Шэнэ түхеэрэмжын һуралга хээд баталаарайгты. Хоёр түхеэрэмжэ мүнөө хоюулаа хүдэлөө һаа, баталалга шифрлэгдэһэн шууд холболгоор дамжуулагдаха; үгэ һаа код хээрэгты ондоо түхеэрэмжэ руу.',
+    "Scan the new device's request QR code or paste its request, then approve it. If both devices are online, the signed approval is sent over a direct encrypted connection; otherwise scan the approval QR code or paste its code.":
+      'Шэнэ түхеэрэмжын һуралгын QR код уншагты гү, али һуралгыень хээд баталаарайгты. Хоёр түхеэрэмжэ мүнөө хоюулаа хүдэлөө һаа, баталалга шифрлэгдэһэн шууд холболгоор дамжуулагдаха; үгы һаа баталалгын QR код уншагты гү, али кодыень хээрэгты.',
     'If the direct connection succeeds, this device joins automatically. Otherwise paste the 24-hour approval code here. Pairing replaces the current local profile and language list.':
       'Шууд холболго бии болоо һаа, түхеэрэмжэнүүд автоматаар нэгэдэхэ. Үгы һаа, 24 сагай баталалгын код эндэ хээрээт. Холболго мүнөөхи бүридхэл болон хэлэнүүдэй жагсаалтые һэлгэхэ.',
     'PNG, JPEG, WebP, GIF, or HEIC; up to 2 MiB is saved to your profile, with an 80 KiB copy for each language.':
@@ -298,6 +310,12 @@ const translations = {
     'Create a language or join one with a shared key.':
       'Создайте язык или присоединитесь к нему с помощью общего ключа.',
     'Create pairing request': 'Создать запрос на сопряжение',
+    'Close scanner': 'Закрыть сканер',
+    'Generating QR code...': 'Создание QR-кода…',
+    'Scanned pairing QR code is too large': 'Отсканированный QR-код слишком большой',
+    'Scanned QR code is not a pairing code': 'Отсканированный QR-код не является кодом сопряжения',
+    'This QR code is for the wrong pairing step':
+      'Этот QR-код предназначен для другого шага сопряжения',
     'Create language': 'Создать язык',
     'Current roles': 'Текущие роли',
     'Description or context': 'Описание или контекст',
@@ -336,6 +354,12 @@ const translations = {
     Pairing: 'Сопряжение устройств',
     'Pair this device': 'Подключить это устройство',
     'Paired devices': 'Подключённые устройства',
+    'Hide QR code': 'Скрыть QR-код',
+    'Show QR code': 'Показать QR-код',
+    'Scan pairing approval QR code': 'Сканировать QR-код подтверждения сопряжения',
+    'Scan pairing request QR code': 'Сканировать QR-код запроса на сопряжение',
+    'QR code for pairing approval': 'QR-код подтверждения сопряжения',
+    'QR code for pairing request': 'QR-код запроса на сопряжение',
     'Paste language key': 'Вставьте ключ языка',
     'Paste pairing approval': 'Вставьте подтверждение сопряжения',
     'Paste pairing request': 'Вставьте запрос на сопряжение',
@@ -434,8 +458,8 @@ const translations = {
     'Option {number} media': 'Медиа варианта {number}',
     'Pairing approval code': 'Код подтверждения сопряжения',
     'Pairing request code': 'Код запроса на сопряжение',
-    "Paste the new device's request and approve it. If both devices are online, the signed approval is sent over a direct encrypted connection; the code remains a fallback.":
-      'Вставьте запрос нового устройства и подтвердите его. Если оба устройства в сети, подписанное подтверждение будет отправлено по прямому зашифрованному соединению; код останется запасным вариантом.',
+    "Scan the new device's request QR code or paste its request, then approve it. If both devices are online, the signed approval is sent over a direct encrypted connection; otherwise scan the approval QR code or paste its code.":
+      'Отсканируйте QR-код запроса нового устройства или вставьте запрос, затем подтвердите его. Если оба устройства в сети, подписанное подтверждение будет отправлено по прямому зашифрованному соединению; иначе отсканируйте QR-код подтверждения или вставьте его код.',
     'If the direct connection succeeds, this device joins automatically. Otherwise paste the 24-hour approval code here. Pairing replaces the current local profile and language list.':
       'Если прямое соединение установлено, устройство подключится автоматически. В противном случае вставьте сюда код подтверждения, действующий 24 часа. Сопряжение заменит текущий локальный профиль и список языков.',
     'PNG, JPEG, WebP, GIF, or HEIC; up to 2 MiB is saved to your profile, with an 80 KiB copy for each language.':
