@@ -23,6 +23,7 @@ export function Pairing({
   onCreateRequest,
   onApprove,
   onComplete,
+  onRevoke,
   onError
 }) {
   const { locale, t, plural } = useI18n()
@@ -89,11 +90,32 @@ export function Pairing({
           <ul>
             {status.devices.map((device) => (
               <li key={device.key}>
-                <code>{device.key}</code>
+                <strong>{device.deviceName || t('Unknown device')}</strong>
                 <span>
                   {device.key === status.deviceKey ? `${t('This device')} · ` : ''}
-                  {device.active ? t('Authorized') : t('Not authorized')}
+                  {device.devicePlatform ? `${t(device.devicePlatform)} · ` : ''}
+                  {device.active ? t('Authorized') : t('Not authorized')} ·{' '}
+                  <code>{device.key.slice(0, 12)}</code>
                 </span>
+                {status.paired && device.active && device.key !== status.deviceKey && (
+                  <button
+                    className='revoke-access'
+                    type='button'
+                    onClick={() => {
+                      if (
+                        globalThis.confirm(
+                          t(
+                            'Revoke access to this device and remove its ability to sync this profile?'
+                          )
+                        )
+                      ) {
+                        onRevoke(device.key)
+                      }
+                    }}
+                  >
+                    {t('Revoke access')}
+                  </button>
+                )}
               </li>
             ))}
           </ul>

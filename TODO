@@ -25,7 +25,7 @@
 * Translation API details does not show up for newly created language, due to isOwner is false. why? debug.
 * V - Kinds of polls: translation poll
   * V - "Suggest translation" button in search translation panel, this button creates new translation poll for searched word
-* Control panel for paired devices: revoke device - close access
+* V - Control panel for paired devices: revoke device - close access
 * rearrange UI, pages, initial setup, menu, styling
 * V - Burlang API
 * V - i18n
@@ -39,3 +39,6 @@
 * Windows store
 * Ubuntu app store
 * Ask for review
+* antibot protection
+* "report user" button, autoban system
+* notifications

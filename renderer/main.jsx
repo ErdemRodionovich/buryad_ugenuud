@@ -150,6 +150,9 @@ function App() {
         }
       }
       if (parsed?.type === 'pairing-status') setPairingStatus(parsed.data)
+      if (parsed?.type === 'device-data-reset') {
+        window.bridge.restartApp().catch((error) => setNotice(error.message))
+      }
       if (parsed?.type === 'pairing-request') setPairingRequestCode(parsed.data)
       if (parsed?.type === 'pairing-approval') setPairingApprovalCode(parsed.data)
       if (parsed?.type === 'pairing-connection-status') {
@@ -507,6 +510,9 @@ function App() {
               onCreateRequest={() => request({ type: 'pairing', data: { cmd: 'create-request' } })}
               onApprove={(code) => request({ type: 'pairing', data: { cmd: 'approve', code } })}
               onComplete={(code) => request({ type: 'pairing', data: { cmd: 'complete', code } })}
+              onRevoke={(deviceKey) =>
+                request({ type: 'pairing', data: { cmd: 'revoke', deviceKey } })
+              }
               onError={(error) => setNotice(error.message)}
             />
           )}
@@ -537,6 +543,9 @@ function App() {
                 }
                 onApprove={(code) => request({ type: 'pairing', data: { cmd: 'approve', code } })}
                 onComplete={(code) => request({ type: 'pairing', data: { cmd: 'complete', code } })}
+                onRevoke={(deviceKey) =>
+                  request({ type: 'pairing', data: { cmd: 'revoke', deviceKey } })
+                }
                 onError={(error) => setNotice(error.message)}
               />
             )}

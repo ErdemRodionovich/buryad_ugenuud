@@ -237,6 +237,17 @@ button:disabled {
   font-size: 12px;
 }
 
+.revoke-access {
+  justify-self: start;
+  color: #a34f2e;
+  font-size: 13px;
+  text-decoration: underline;
+}
+
+.revoke-access:hover {
+  color: #7d3219;
+}
+
 .pairing-panel h2 {
   margin-bottom: 8px;
 }

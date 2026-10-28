@@ -210,6 +210,20 @@ ipcMain.handle('app:afterUpdate', () => {
   }
   app.quit()
 })
+ipcMain.handle('app:restart', () => {
+  if (isLinux && process.env.APPIMAGE) {
+    app.relaunch({
+      execPath: process.env.APPIMAGE,
+      args: [
+        '--appimage-extract-and-run',
+        ...process.argv.slice(1).filter((arg) => arg !== '--appimage-extract-and-run')
+      ]
+    })
+  } else {
+    app.relaunch()
+  }
+  app.quit()
+})
 ipcMain.handle('yandex-translate', async (event, { text, apiKey, folderId, targetLang }) => {
   try {
     const response = await fetch('https://translate.api.cloud.yandex.net/translate/v2/translate', {
