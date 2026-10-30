@@ -12,7 +12,7 @@ function PairingQrCode({ code, label, onError }) {
   useEffect(() => {
     let active = true
     setImage('')
-    QRCode.toDataURL(code, { errorCorrectionLevel: 'H', margin: 2, width: 240 })
+    QRCode.toDataURL(code, { errorCorrectionLevel: 'M', margin: 2, width: 550 })
       .then((dataUrl) => {
         if (active) setImage(dataUrl)
       })
@@ -129,6 +129,7 @@ function expiresAt(code, locale) {
 export function Pairing({
   status,
   requestCode,
+  requestOnStart,
   approvalCode,
   connectionStatuses,
   onCreateRequest,
@@ -140,8 +141,8 @@ export function Pairing({
   const { locale, t, plural } = useI18n()
   const [requestInput, setRequestInput] = useState('')
   const [approvalInput, setApprovalInput] = useState('')
-  const [showRequestQr, setShowRequestQr] = useState(false)
-  const [showApprovalQr, setShowApprovalQr] = useState(false)
+  const [showRequestQr, setShowRequestQr] = useState(true)
+  const [showApprovalQr, setShowApprovalQr] = useState(true)
   const [scannerTarget, setScannerTarget] = useState(null)
   const currentRequestId = (() => {
     try {
@@ -164,6 +165,11 @@ export function Pairing({
     } catch (error) {
       onError(error)
     }
+  }
+
+  function createRequest() {
+    onCreateRequest()
+    setShowRequestQr(true)
   }
 
   function approve(event) {
@@ -200,12 +206,25 @@ export function Pairing({
       return
     }
 
-    if (scannerTarget === 'request') setRequestInput(value)
-    if (scannerTarget === 'approval') setApprovalInput(value)
+    if (scannerTarget === 'request') {
+      setRequestInput(value)
+      onApprove(value)
+    }
+    if (scannerTarget === 'approval') {
+      setApprovalInput(value)
+      onComplete(value)
+    }
     setScannerTarget(null)
   }
 
   const activeDeviceCount = status?.devices?.filter((device) => device.active).length || 0
+
+  if (requestOnStart) {
+    useEffect(() => {
+      if (!requestCode || requestCode == '')
+        createRequest()
+    })
+  }
 
   return (
     <section className='pairing-panel'>
@@ -272,7 +291,7 @@ export function Pairing({
               'Create a request here, then paste it into an already-authorized device for approval.'
             )}
           </p>
-          <button className='primary' type='button' onClick={onCreateRequest}>
+          <button className='primary' type='button' onClick={createRequest}>
             {t('Create pairing request')}
           </button>
           {requestCode && (
@@ -280,15 +299,6 @@ export function Pairing({
               <small>
                 {t('Direct connection')}: {t(connectionStatuses?.[currentRequestId] || 'starting')}
               </small>
-              <textarea
-                value={requestCode}
-                readOnly
-                rows={5}
-                aria-label={t('Pairing request code')}
-              />
-              <button type='button' className='quiet' onClick={() => copyCode(requestCode)}>
-                {t('Copy request')}
-              </button>
               <button
                 type='button'
                 className='quiet'
@@ -303,6 +313,15 @@ export function Pairing({
                   onError={onError}
                 />
               )}
+              <textarea
+                value={requestCode}
+                readOnly
+                rows={5}
+                aria-label={t('Pairing request code')}
+              />
+              <button type='button' className='quiet' onClick={() => copyCode(requestCode)}>
+                {t('Copy request')}
+              </button>
               <small>
                 {t('Request expires: {date}', { date: expiresAt(requestCode, locale) })}
               </small>
@@ -342,15 +361,6 @@ export function Pairing({
               <small>
                 {t('Direct connection')}: {t(connectionStatuses?.[approvalRequestId] || 'starting')}
               </small>
-              <textarea
-                value={approvalCode}
-                readOnly
-                rows={5}
-                aria-label={t('Pairing approval code')}
-              />
-              <button type='button' className='quiet' onClick={() => copyCode(approvalCode)}>
-                {t('Copy approval')}
-              </button>
               <button
                 type='button'
                 className='quiet'
@@ -365,6 +375,15 @@ export function Pairing({
                   onError={onError}
                 />
               )}
+              <textarea
+                value={approvalCode}
+                readOnly
+                rows={5}
+                aria-label={t('Pairing approval code')}
+              />
+              <button type='button' className='quiet' onClick={() => copyCode(approvalCode)}>
+                {t('Copy approval')}
+              </button>
               <small>
                 {t('Approval expires: {date}', { date: expiresAt(approvalCode, locale) })}
               </small>

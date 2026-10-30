@@ -237,11 +237,11 @@ function App() {
           kind: pollKind,
           ...(pollKind === 'translation'
             ? {
-                translationDetails: {
-                  languageOfWordForTranslation: translationPoll.language,
-                  wordsForTranslation: translationPoll.words
-                }
+              translationDetails: {
+                languageOfWordForTranslation: translationPoll.language,
+                wordsForTranslation: translationPoll.words
               }
+            }
             : {})
         }
       }
@@ -334,8 +334,8 @@ function App() {
             {updateReady
               ? t('Update ready!')
               : selectedUser?.nickname ||
-                (page === 'language' ? activeLanguage?.name : null) ||
-                t('Language library')}
+              (page === 'language' ? activeLanguage?.name : null) ||
+              t('Language library')}
           </h1>
         </div>
         <span className='status'>
@@ -505,6 +505,7 @@ function App() {
             <Pairing
               status={pairingStatus}
               requestCode={pairingRequestCode}
+              requestOnStart={true}
               approvalCode={pairingApprovalCode}
               connectionStatuses={pairingConnectionStatuses}
               onCreateRequest={() => request({ type: 'pairing', data: { cmd: 'create-request' } })}
@@ -536,6 +537,7 @@ function App() {
               <Pairing
                 status={pairingStatus}
                 requestCode={pairingRequestCode}
+                requestOnStart={false}
                 approvalCode={pairingApprovalCode}
                 connectionStatuses={pairingConnectionStatuses}
                 onCreateRequest={() =>
@@ -831,8 +833,8 @@ function App() {
               roles={
                 canManageLanguage && rolesLanguageId === activeLanguageId
                   ? languageRoles.find(
-                      (user) => user.userKey.toLowerCase() === selectedUser.userKey
-                    )?.roles || []
+                    (user) => user.userKey.toLowerCase() === selectedUser.userKey
+                  )?.roles || []
                   : []
               }
               onBack={() => setSelectedUser(null)}

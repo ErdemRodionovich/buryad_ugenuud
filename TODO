@@ -31,7 +31,7 @@
 * V - i18n
 * language's code from translation api details
 * polls pagination, filters
-* QR code in pairing
+* V - QR code in pairing
 * E2E tests
 * android
 * iOS
@@ -42,3 +42,4 @@
 * antibot protection
 * "report user" button, autoban system
 * notifications
+* make pairing flow easy

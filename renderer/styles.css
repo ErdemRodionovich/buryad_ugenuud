@@ -112,7 +112,7 @@ button:disabled {
   padding: 22px;
 }
 
-.welcome-panel > p:not(.eyebrow) {
+.welcome-panel>p:not(.eyebrow) {
   max-width: 620px;
   margin: 0;
   color: #668073;
@@ -290,7 +290,7 @@ button:disabled {
 }
 
 .pairing-qr {
-  width: min(240px, 100%);
+  width: min(550px, 100%);
   justify-self: center;
   background: #fff;
   padding: 8px;
@@ -585,7 +585,7 @@ h2 {
   margin: 0;
 }
 
-.language-members .section-heading > span {
+.language-members .section-heading>span {
   color: #789086;
   font: 12px monospace;
 }
@@ -594,7 +594,7 @@ h2 {
   display: grid;
 }
 
-.member-list > .user-identity {
+.member-list>.user-identity {
   padding: 12px 0;
   border-top: 1px solid #d8e3d9;
 }
@@ -988,7 +988,7 @@ textarea {
   font-size: 16px;
 }
 
-.language-roles > p:not(.eyebrow) {
+.language-roles>p:not(.eyebrow) {
   margin: 0;
   color: #668073;
   line-height: 1.5;
