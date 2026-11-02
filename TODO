@@ -31,6 +31,8 @@
 * V - i18n
 * language's code from translation api details
 * polls pagination, filters
+  * open/closed polls are separate in db
+  * additional indexes for fast search and sort
 * V - QR code in pairing
 * E2E tests
 * android
@@ -43,3 +45,5 @@
 * "report user" button, autoban system
 * notifications
 * make pairing flow easy
+* Буряад корпус API?
+* hint list of similar words during type of word for search
