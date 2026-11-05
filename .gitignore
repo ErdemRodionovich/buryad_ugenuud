@@ -3,3 +3,12 @@ out/
 node_modules/
 todo
 .vscode/
+mobile/.expo/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/app/debug.keystore
+mobile/android/app/build/
+mobile/android/app/src/main/assets/buryad-web/
+mobile/src/worker.bundle.js
+mobile/web/
+mobile/worker-addons/

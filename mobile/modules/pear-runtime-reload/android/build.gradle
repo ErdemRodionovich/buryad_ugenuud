@@ -1,0 +1,14 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+layout.buildDirectory = rootProject.layout.buildDirectory.dir("pear-runtime-reload")
+
+android {
+  namespace 'to.holepunch.pear.runtime'
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}

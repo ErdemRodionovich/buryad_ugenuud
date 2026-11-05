@@ -1,0 +1,42 @@
+{
+  "name": "buryad-ugenuud-android",
+  "version": "0.0.1",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "bundle:bare": "bare-pack --host android-arm64 --host android-x64 --linked --out ./src/worker.bundle.js ../workers/main.js",
+    "link:worker-addons": "node scripts/link-worker-addons.js",
+    "build:web": "npm --prefix .. run build:android-web",
+    "prebuild:android": "npm run build:web && npm run bundle:bare && npm run link:worker-addons && expo prebuild --platform android",
+    "start": "expo start",
+    "android": "npm run prebuild:android && expo run:android",
+    "android:release": "npm run prebuild:android && expo run:android --variant release",
+    "android:aab": "npm run prebuild:android && cd android && ./gradlew bundleRelease",
+    "lint": "prettier --check . && lunte"
+  },
+  "dependencies": {
+    "b4a": "^1.8.0",
+    "expo": "^55.0.8",
+    "expo-clipboard": "~55.0.10",
+    "expo-build-properties": "~55.0.10",
+    "expo-modules-core": "^55.0.17",
+    "expo-status-bar": "~55.0.4",
+    "expo-system-ui": "~55.0.10",
+    "framed-stream": "^1.0.1",
+    "pear-mobile": "^4.3.0",
+    "pear-runtime-react-native": "^3.0.1",
+    "react": "19.2.0",
+    "react-native": "0.83.10",
+    "react-native-bare-kit": "^0.12.0",
+    "react-native-webview": "13.16.0"
+  },
+  "devDependencies": {
+    "@react-native/metro-config": "^0.84.0",
+    "bare-link": "^3.3.2",
+    "bare-pack": "^2.0.0",
+    "lunte": "^1.6.0",
+    "prettier": "^3.8.1",
+    "prettier-config-holepunch": "^2.0.0",
+    "typescript": "~5.9.2"
+  }
+}

@@ -35,7 +35,7 @@
   * additional indexes for fast search and sort
 * V - QR code in pairing
 * E2E tests
-* android
+* Android device testing and Play submission (see mobile/README.md)
 * iOS
 * publish
 * Windows store

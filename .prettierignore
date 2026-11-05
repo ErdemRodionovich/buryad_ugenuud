@@ -1,1 +1,4 @@
 out
+mobile/android/
+mobile/web/
+mobile/src/worker.bundle.js
