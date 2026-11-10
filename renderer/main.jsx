@@ -656,25 +656,6 @@ function App() {
             )}
             {page === 'language' && activeLanguage && (
               <>
-                <div className='language-bar'>
-                  <div>
-                    <p className='eyebrow'>{t('Language')}</p>
-                    <h2>{activeLanguage.name}</h2>
-                    <p>{activeLanguage.description}</p>
-                  </div>
-                  <div className='language-actions'>
-                    <button className='quiet' onClick={() => setPage('languages')}>
-                      {t('All languages')}
-                    </button>
-                    <button
-                      className='share-key'
-                      onClick={() => navigator.clipboard?.writeText(activeLanguage.key)}
-                    >
-                      {t('Copy key')}
-                    </button>
-                    <code>{activeLanguage.key}</code>
-                  </div>
-                </div>
                 <TranslateWord
                   canEdit={canCreateWords}
                   canSuggest={canCreatePolls}
@@ -823,6 +804,25 @@ function App() {
                     </button>
                   </form>
                 )}
+                <div className='language-bar'>
+                  <div>
+                    <p className='eyebrow'>{t('Language')}</p>
+                    <h2>{activeLanguage.name}</h2>
+                    <p>{activeLanguage.description}</p>
+                  </div>
+                  <div className='language-actions'>
+                    <button className='quiet' onClick={() => setPage('languages')}>
+                      {t('All languages')}
+                    </button>
+                    <button
+                      className='share-key'
+                      onClick={() => navigator.clipboard?.writeText(activeLanguage.key)}
+                    >
+                      {t('Copy key')}
+                    </button>
+                    <code>{activeLanguage.key}</code>
+                  </div>
+                </div>
               </>
             )}
           </div>

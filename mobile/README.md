@@ -17,6 +17,9 @@ complete device and Play internal-track testing before a production rollout.
 
 The Android application ID is `com.erdem.badluev.buryadugenuud`. It is a
 permanent Play Store identifier; do not change it after the first Play release.
+The Android launcher icon uses the PNG rendition of
+[`../buryad_ugenuud_icon.svg`](../buryad_ugenuud_icon.svg), configured in
+`app.config.js`.
 
 ## Build and run
 
@@ -99,8 +102,10 @@ Before production publication:
 
 - Configure secure release signing and back up the upload key.
 - Verify the final application name, icon, screenshots, and store listing text.
-- Publish a privacy policy URL and complete the Data safety form based on the
-  app's actual P2P, media, pairing, and optional translation-provider behavior.
+- Publish a privacy policy URL using [`../PRIVACY_POLICY.md`](../PRIVACY_POLICY.md)
+  after replacing its publisher and privacy-contact placeholders, and complete
+  the Data safety form based on the app's actual P2P, media, pairing, and
+  translation-provider behavior.
 - Complete the content rating, target audience, app access, and other Play
   Console declarations.
 - Test install, onboarding, language creation/joining, polls, media selection,

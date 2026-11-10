@@ -7,7 +7,7 @@ module.exports = {
     version: packageJson.version,
     orientation: 'portrait',
     userInterfaceStyle: 'light',
-    icon: '../build/icon.png',
+    icon: '../buryad_ugenuud_icon.png',
     plugins: [
       'pear-runtime-react-native',
       [
@@ -24,10 +24,10 @@ module.exports = {
     ],
     android: {
       package: 'com.erdem.badluev.buryadugenuud',
-      versionCode: 1,
+      versionCode: 2,
       adaptiveIcon: {
-        foregroundImage: '../build/icon.png',
-        backgroundColor: '#eef3ed'
+        foregroundImage: '../buryad_ugenuud_icon.png',
+        backgroundColor: '#fbfcf8'
       },
       permissions: ['CAMERA'],
       blockedPermissions: [
