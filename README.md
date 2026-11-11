@@ -47,9 +47,10 @@ There are many things TODO:
 * V - Burlang API
 * V - i18n
 * language's code from translation api details
-* polls pagination, filters
+* V - polls pagination, filters
   * open/closed polls are separate in db
-  * additional indexes for fast search and sort
+  * V (client side)- additional indexes for fast search and sort
+  * worker side?
 * V - QR code in pairing
 * E2E tests
 * Android device testing and Play submission (see mobile/README.md)
