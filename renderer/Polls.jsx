@@ -1,4 +1,4 @@
-import { lazy, Suspense, useContext, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import './styles.css'
 import { IPCContext } from './IPCContext'
 import { PollContext } from './PollContext'
@@ -11,12 +11,60 @@ const EmojiPicker = lazy(() =>
   import('./EmojiPicker').then((module) => ({ default: module.EmojiPicker }))
 )
 
+const pollsPerPage = 10
+const initialPollFilters = {
+  dateMode: 'all',
+  dateValue: '',
+  dateFrom: '',
+  dateTo: '',
+  creator: '',
+  word: '',
+  voteStatus: 'all',
+  pollStatus: 'all'
+}
+
 function pollText(value) {
-  return typeof value === 'string' ? value : value?.text || ''
+  if (typeof value === 'string') return value
+  return typeof value?.text === 'string' ? value.text : ''
+}
+
+function pollSearchText(poll) {
+  const text = [pollText(poll.question)]
+  if (Array.isArray(poll.options)) text.push(...poll.options.map(pollText))
+  if (poll.translationDetails) {
+    text.push(poll.translationDetails.languageOfWordForTranslation)
+    if (Array.isArray(poll.translationDetails.wordsForTranslation)) {
+      text.push(...poll.translationDetails.wordsForTranslation)
+    }
+  }
+  return text.filter((value) => typeof value === 'string').join('\n')
+}
+
+function localDateStart(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) return null
+  const [, yearText, monthText, dayText] = match
+  const year = Number(yearText)
+  const month = Number(monthText)
+  const day = Number(dayText)
+  const date = new Date(0)
+  date.setFullYear(year, month - 1, day)
+  date.setHours(0, 0, 0, 0)
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null
+  }
+  return date.getTime()
+}
+
+function nextLocalDay(start) {
+  const date = new Date(start)
+  date.setDate(date.getDate() + 1)
+  return date.getTime()
 }
 
 function totalVotes(poll) {
-  return Object.values(poll.votes || {}).reduce((sum, count) => sum + count, 0)
+  const votes = poll.votes && typeof poll.votes === 'object' ? Object.values(poll.votes) : []
+  return votes.reduce((sum, count) => sum + (Number.isFinite(count) && count > 0 ? count : 0), 0)
 }
 
 export function Polls({
@@ -35,9 +83,110 @@ export function Polls({
   const [commentMedia, setCommentMedia] = useState([])
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
   const [reactionPickerCommentId, setReactionPickerCommentId] = useState(null)
+  const [sortOrder, setSortOrder] = useState('newest')
+  const [filters, setFilters] = useState(initialPollFilters)
+  const [page, setPage] = useState(0)
   const commentInput = useRef(null)
   const requestRef = useRef(request)
   requestRef.current = request
+
+  const pollSortIndexes = useMemo(() => {
+    const collator = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' })
+    const indexedPolls = polls.map((poll, index) => {
+      const createdAt = Number(poll.createdAt)
+      const creator = [
+        typeof poll.creatorProfile?.nickname === 'string' ? poll.creatorProfile.nickname : '',
+        typeof poll.creator === 'string' ? poll.creator : ''
+      ]
+        .filter(Boolean)
+        .join('\n')
+      return {
+        index,
+        id: String(poll.id ?? ''),
+        question: pollText(poll.question),
+        searchText: pollSearchText(poll).toLocaleLowerCase(locale),
+        creator: creator.toLocaleLowerCase(locale),
+        createdAt: Number.isFinite(createdAt) ? createdAt : null,
+        votes: totalVotes(poll)
+      }
+    })
+    const withStableTieBreak = (compare) => (left, right) =>
+      compare(left, right) || left.id.localeCompare(right.id) || left.index - right.index
+    const createIndex = (compare) =>
+      [...indexedPolls].sort(withStableTieBreak(compare)).map(({ index }) => index)
+
+    return {
+      newest: createIndex((left, right) => right.createdAt - left.createdAt),
+      oldest: createIndex((left, right) => left.createdAt - right.createdAt),
+      questionAsc: createIndex((left, right) => collator.compare(left.question, right.question)),
+      questionDesc: createIndex((left, right) => collator.compare(right.question, left.question)),
+      mostVotes: createIndex((left, right) => right.votes - left.votes),
+      fewestVotes: createIndex((left, right) => left.votes - right.votes),
+      metadata: indexedPolls
+    }
+  }, [locale, polls])
+  const sortedPollIndexes = pollSortIndexes[sortOrder] || pollSortIndexes.newest
+  const filteredPollIndexes = useMemo(() => {
+    const creatorFilter = filters.creator.trim().toLocaleLowerCase(locale)
+    const wordFilter = filters.word.trim().toLocaleLowerCase(locale)
+    const dateValue = filters.dateValue ? localDateStart(filters.dateValue) : null
+    const dateFrom = filters.dateFrom ? localDateStart(filters.dateFrom) : null
+    const dateTo = filters.dateTo ? localDateStart(filters.dateTo) : null
+    const hasDateFilter = filters.dateMode !== 'all'
+
+    return sortedPollIndexes.filter((index) => {
+      const poll = polls[index]
+      const metadata = pollSortIndexes.metadata[index]
+      if (filters.pollStatus === 'open' && poll.closed) return false
+      if (filters.pollStatus === 'closed' && !poll.closed) return false
+      if (filters.voteStatus === 'voted' && !poll.hasVoted) return false
+      if (filters.voteStatus === 'not-voted' && poll.hasVoted) return false
+      if (creatorFilter && !metadata.creator.includes(creatorFilter)) return false
+      if (wordFilter && !metadata.searchText.includes(wordFilter)) return false
+
+      if (filters.dateMode === 'after' && dateValue !== null) {
+        if (metadata.createdAt === null || metadata.createdAt < nextLocalDay(dateValue)) {
+          return false
+        }
+      } else if (filters.dateMode === 'before' && dateValue !== null) {
+        if (metadata.createdAt === null || metadata.createdAt >= dateValue) return false
+      } else if (filters.dateMode === 'range') {
+        if (
+          metadata.createdAt === null ||
+          (dateFrom !== null && metadata.createdAt < dateFrom) ||
+          (dateTo !== null && metadata.createdAt >= nextLocalDay(dateTo))
+        ) {
+          return false
+        }
+      }
+      if (
+        hasDateFilter &&
+        filters.dateMode !== 'range' &&
+        filters.dateValue &&
+        dateValue === null
+      ) {
+        return false
+      }
+      if (
+        filters.dateMode === 'range' &&
+        ((filters.dateFrom && dateFrom === null) || (filters.dateTo && dateTo === null))
+      ) {
+        return false
+      }
+      return true
+    })
+  }, [filters, locale, pollSortIndexes.metadata, polls, sortedPollIndexes])
+  const dateRangeInvalid = Boolean(
+    filters.dateMode === 'range' &&
+    filters.dateFrom &&
+    filters.dateTo &&
+    filters.dateFrom > filters.dateTo
+  )
+  const pageCount = Math.max(1, Math.ceil(filteredPollIndexes.length / pollsPerPage))
+  const currentPage = Math.min(page, pageCount - 1)
+  const visiblePolls = filteredPollIndexes
+    .slice(currentPage * pollsPerPage, (currentPage + 1) * pollsPerPage)
+    .map((index) => polls[index])
 
   const selectedPoll = polls.find((poll) => poll.id === selectedPollId)
   const comments = selectedPoll
@@ -52,6 +201,15 @@ export function Polls({
     }
     return selectedPoll.options[counts.indexOf(highestCount)]
   })()
+
+  useEffect(() => {
+    setPage(0)
+    setFilters(initialPollFilters)
+  }, [activeLanguageId])
+
+  useEffect(() => {
+    setPage((currentPage) => Math.min(currentPage, pageCount - 1))
+  }, [pageCount])
 
   useEffect(() => {
     if (!activeLanguageId || !selectedPoll) return
@@ -118,17 +276,154 @@ export function Polls({
     })
   }
 
+  function updateFilter(key, value) {
+    setFilters((current) => ({ ...current, [key]: value }))
+    setPage(0)
+  }
+
+  function clearFilters() {
+    setFilters(initialPollFilters)
+    setPage(0)
+  }
+
   return (
     <section className='workspace'>
       <div className='poll-list'>
         <div className='section-heading'>
           <h2>{t('Open conversations')}</h2>
-          <button className='quiet' onClick={refresh}>
+          <button className='quiet' type='button' onClick={refresh}>
             {t('Refresh')}
           </button>
         </div>
+        <details className='poll-filters'>
+          <summary>{t('Filter polls')}</summary>
+          <div className='poll-filter-fields'>
+            <label className='poll-filter-control'>
+              <span>{t('Poll text')}</span>
+              <input
+                type='search'
+                value={filters.word}
+                placeholder={t('Question, options, or translation words')}
+                onChange={(event) => updateFilter('word', event.target.value)}
+              />
+            </label>
+            <label className='poll-filter-control'>
+              <span>{t('Creator')}</span>
+              <input
+                type='search'
+                value={filters.creator}
+                placeholder={t('Creator name or key')}
+                onChange={(event) => updateFilter('creator', event.target.value)}
+              />
+            </label>
+            <label className='poll-filter-control'>
+              <span>{t('Created date')}</span>
+              <select
+                value={filters.dateMode}
+                onChange={(event) => updateFilter('dateMode', event.target.value)}
+              >
+                <option value='all'>{t('Any date')}</option>
+                <option value='after'>{t('After date')}</option>
+                <option value='before'>{t('Before date')}</option>
+                <option value='range'>{t('Between dates')}</option>
+              </select>
+            </label>
+            {filters.dateMode === 'after' || filters.dateMode === 'before' ? (
+              <label className='poll-filter-control'>
+                <span>{t('Date')}</span>
+                <input
+                  type='date'
+                  value={filters.dateValue}
+                  onChange={(event) => updateFilter('dateValue', event.target.value)}
+                />
+              </label>
+            ) : null}
+            {filters.dateMode === 'range' && (
+              <div className='poll-filter-date-range'>
+                <label className='poll-filter-control'>
+                  <span>{t('Start date')}</span>
+                  <input
+                    type='date'
+                    value={filters.dateFrom}
+                    max={filters.dateTo || undefined}
+                    aria-invalid={Boolean(dateRangeInvalid)}
+                    onChange={(event) => updateFilter('dateFrom', event.target.value)}
+                  />
+                </label>
+                <label className='poll-filter-control'>
+                  <span>{t('End date')}</span>
+                  <input
+                    type='date'
+                    value={filters.dateTo}
+                    min={filters.dateFrom || undefined}
+                    aria-invalid={Boolean(dateRangeInvalid)}
+                    onChange={(event) => updateFilter('dateTo', event.target.value)}
+                  />
+                </label>
+                {dateRangeInvalid && (
+                  <p className='poll-filter-date-error'>
+                    {t('Start date must be on or before end date.')}
+                  </p>
+                )}
+              </div>
+            )}
+            <label className='poll-filter-control'>
+              <span>{t('Vote status')}</span>
+              <select
+                value={filters.voteStatus}
+                onChange={(event) => updateFilter('voteStatus', event.target.value)}
+              >
+                <option value='all'>{t('Any vote status')}</option>
+                <option value='voted'>{t('Voted by me')}</option>
+                <option value='not-voted'>{t('Not voted by me')}</option>
+              </select>
+            </label>
+            <label className='poll-filter-control'>
+              <span>{t('Poll status')}</span>
+              <select
+                value={filters.pollStatus}
+                onChange={(event) => updateFilter('pollStatus', event.target.value)}
+              >
+                <option value='all'>{t('Any poll status')}</option>
+                <option value='open'>{t('Open')}</option>
+                <option value='closed'>{t('Closed')}</option>
+              </select>
+            </label>
+            <button className='quiet poll-filter-reset' type='button' onClick={clearFilters}>
+              {t('Clear filters')}
+            </button>
+          </div>
+        </details>
+        {polls.length > 0 && (
+          <p className='poll-result-count'>
+            {t('Showing {shown} of {total} polls', {
+              shown: filteredPollIndexes.length,
+              total: polls.length
+            })}
+          </p>
+        )}
+        <label className='poll-sort-control'>
+          <span>{t('Sort by')}</span>
+          <select
+            value={sortOrder}
+            onChange={(event) => {
+              setSortOrder(event.target.value)
+              setPage(0)
+            }}
+          >
+            <option value='newest'>{t('Newest first')}</option>
+            <option value='oldest'>{t('Oldest first')}</option>
+            <option value='questionAsc'>{t('Question (A–Z)')}</option>
+            <option value='questionDesc'>{t('Question (Z–A)')}</option>
+            <option value='mostVotes'>{t('Most votes')}</option>
+            <option value='fewestVotes'>{t('Fewest votes')}</option>
+          </select>
+        </label>
         {polls.length === 0 && <p className='empty'>{t('No polls yet. Start the first one.')}</p>}
-        {polls.map((poll) => (
+        {polls.length > 0 && filteredPollIndexes.length === 0 && (
+          <p className='empty'>{t('No polls match these filters.')}</p>
+        )}
+        {visiblePolls.map((poll) => (
           <button
             className={`poll-row ${poll.id === selectedPollId ? 'active' : ''}`}
             key={poll.id}
@@ -142,6 +437,34 @@ export function Polls({
             </span>
           </button>
         ))}
+        {filteredPollIndexes.length > pollsPerPage && (
+          <nav className='poll-pagination' aria-label={t('Poll pages')}>
+            <button
+              className='quiet'
+              type='button'
+              disabled={currentPage === 0}
+              aria-label={t('Previous page')}
+              onClick={() => setPage(currentPage - 1)}
+            >
+              {t('Previous page')}
+            </button>
+            <span aria-live='polite'>
+              {t('Page {current} of {total}', {
+                current: currentPage + 1,
+                total: pageCount
+              })}
+            </span>
+            <button
+              className='quiet'
+              type='button'
+              disabled={currentPage >= pageCount - 1}
+              aria-label={t('Next page')}
+              onClick={() => setPage(currentPage + 1)}
+            >
+              {t('Next page')}
+            </button>
+          </nav>
+        )}
       </div>
       <div className='poll-detail'>
         {selectedPoll ? (
