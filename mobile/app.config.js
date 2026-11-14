@@ -24,7 +24,7 @@ module.exports = {
     ],
     android: {
       package: 'com.erdem.badluev.buryadugenuud',
-      versionCode: 2,
+      versionCode: 3,
       adaptiveIcon: {
         foregroundImage: '../buryad_ugenuud_icon.png',
         backgroundColor: '#fbfcf8'
