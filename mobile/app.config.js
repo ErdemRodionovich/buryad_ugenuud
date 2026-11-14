@@ -20,8 +20,17 @@ module.exports = {
           }
         }
       ],
-      './plugins/with-android-web-assets'
+      './plugins/with-android-web-assets',
+      './plugins/with-ios-worker-addons'
     ],
+    ios: {
+      bundleIdentifier: 'com.erdem.badluev.buryadugenuud',
+      buildNumber: '1',
+      infoPlist: {
+        NSCameraUsageDescription:
+          'Allow Buryad Ugenuud to use the camera to scan a device-pairing QR code.'
+      }
+    },
     android: {
       package: 'com.erdem.badluev.buryadugenuud',
       versionCode: 3,

@@ -4,14 +4,18 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "bundle:bare": "bare-pack --host android-arm64 --host android-x64 --linked --out ./src/worker.bundle.js ../workers/main.js",
+    "bundle:bare": "node scripts/bundle-worker.js",
     "link:worker-addons": "node scripts/link-worker-addons.js",
     "build:web": "npm --prefix .. run build:android-web",
     "prebuild:android": "npm run build:web && npm run bundle:bare && npm run link:worker-addons && expo prebuild --platform android",
+    "prebuild:ios": "npm run build:web && npm run bundle:bare && expo prebuild --platform ios",
     "start": "expo start",
     "android": "npm run prebuild:android && expo run:android",
     "android:release": "npm run prebuild:android && expo run:android --variant release",
     "android:aab": "npm run prebuild:android && cd android && ./gradlew bundleRelease",
+    "ios": "npm run prebuild:ios && expo run:ios",
+    "ios:release": "npm run prebuild:ios && expo run:ios --configuration Release",
+    "ios:archive": "npm run prebuild:ios && xcodebuild -workspace ios/BuryadUgenuud.xcworkspace -scheme BuryadUgenuud -configuration Release -destination 'generic/platform=iOS' -archivePath build/BuryadUgenuud.xcarchive archive",
     "lint": "prettier --check . && lunte"
   },
   "dependencies": {

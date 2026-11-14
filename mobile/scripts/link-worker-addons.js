@@ -2,9 +2,9 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 const link = require('bare-link')
+const { withWorkerDependencies } = require('./worker-dependencies')
 
 const projectRoot = path.resolve(__dirname, '..')
-const appRoot = path.resolve(projectRoot, '..')
 const bundlePath = path.join(projectRoot, 'src/worker.bundle.js')
 const outputPath = path.join(projectRoot, 'worker-addons')
 const hosts = [
@@ -44,42 +44,46 @@ function getLinkedAddons() {
 
 async function main() {
   const addons = getLinkedAddons()
-  const temporaryPath = fs.mkdtempSync(path.join(os.tmpdir(), 'buryad-worker-addons-'))
+  await withWorkerDependencies(async (workerRoot) => {
+    const temporaryPath = fs.mkdtempSync(path.join(os.tmpdir(), 'buryad-worker-addons-'))
 
-  try {
-    for await (const _ of link(appRoot, {
-      hosts: hosts.map(({ name }) => name),
-      out: temporaryPath
-    })) {
-      // bare-link writes each native addon to the temporary output directory.
-    }
+    try {
+      for await (const _ of link(workerRoot, {
+        hosts: hosts.map(({ name }) => name),
+        out: temporaryPath
+      })) {
+        // bare-link writes each native addon to the temporary output directory.
+      }
 
-    fs.rmSync(outputPath, { recursive: true, force: true })
-    for (const { abi } of hosts) {
-      const sourceDirectory = path.join(temporaryPath, abi)
-      const outputDirectory = path.join(outputPath, abi)
-      fs.mkdirSync(outputDirectory, { recursive: true })
-      const linkedLibraries = fs.readdirSync(sourceDirectory).filter((name) => name.endsWith('.so'))
+      fs.rmSync(outputPath, { recursive: true, force: true })
+      for (const { abi } of hosts) {
+        const sourceDirectory = path.join(temporaryPath, abi)
+        const outputDirectory = path.join(outputPath, abi)
+        fs.mkdirSync(outputDirectory, { recursive: true })
+        const linkedLibraries = fs
+          .readdirSync(sourceDirectory)
+          .filter((name) => name.endsWith('.so'))
 
-      for (const addon of addons) {
-        if (!linkedLibraries.includes(addon)) {
-          throw new Error(`Missing ${addon} for ${abi}; it is required by the worker bundle.`)
+        for (const addon of addons) {
+          if (!linkedLibraries.includes(addon)) {
+            throw new Error(`Missing ${addon} for ${abi}; it is required by the worker bundle.`)
+          }
+        }
+
+        for (const library of linkedLibraries) {
+          fs.copyFileSync(path.join(sourceDirectory, library), path.join(outputDirectory, library))
         }
       }
 
-      for (const library of linkedLibraries) {
-        fs.copyFileSync(path.join(sourceDirectory, library), path.join(outputDirectory, library))
-      }
+      console.log(
+        `Linked ${addons.size} worker addons and their native dependencies for ${hosts
+          .map(({ abi }) => abi)
+          .join(', ')}.`
+      )
+    } finally {
+      fs.rmSync(temporaryPath, { recursive: true, force: true })
     }
-
-    console.log(
-      `Linked ${addons.size} worker addons and their native dependencies for ${hosts
-        .map(({ abi }) => abi)
-        .join(', ')}.`
-    )
-  } finally {
-    fs.rmSync(temporaryPath, { recursive: true, force: true })
-  }
+  })
 }
 
 main().catch((error) => {

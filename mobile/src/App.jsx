@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import * as Clipboard from 'expo-clipboard'
 import { reloadAppAsync } from 'expo-modules-core'
@@ -11,6 +11,7 @@ import workerBundle from './worker.bundle.js'
 import packageJson from '../../package.json'
 import { createMobileBridgeScript } from './mobile-bridge'
 import { burlangTranslate, gTranslate, yTranslate } from './translations'
+import { isAllowedWebViewUrl, webViewOriginWhitelist, webViewSource } from './web-app'
 
 const workerSpecifier = '/workers/main.js'
 // Android app-code updates are restricted to Google Play releases.
@@ -20,13 +21,19 @@ const bridgeScript = createMobileBridgeScript(packageJson.version, isDebugBuild)
 
 function debugLog(scope, message, details) {
   if (isDebugBuild) {
-    console.log(`[BuryadAndroid:${scope}] ${message}`, details ?? '')
+    console.log(
+      `[Buryad${Platform.OS === 'ios' ? 'iOS' : 'Android'}:${scope}] ${message}`,
+      details ?? ''
+    )
   }
 }
 
 function debugError(scope, message, details) {
   if (isDebugBuild) {
-    console.error(`[BuryadAndroid:${scope}] ${message}`, details ?? '')
+    console.error(
+      `[Buryad${Platform.OS === 'ios' ? 'iOS' : 'Android'}:${scope}] ${message}`,
+      details ?? ''
+    )
   }
 }
 
@@ -55,13 +62,9 @@ export default function App() {
     setStartupError('')
 
     const ipc = PearRuntime.run('/worker.bundle', workerBundle, [
-      '--updates',
       'false',
-      '--version',
       packageJson.version,
-      '--upgrade',
       packageJson.upgrade,
-      '--productName',
       appName
     ])
     const pipe = new FramedStream(ipc)
@@ -131,7 +134,9 @@ export default function App() {
       if (message.method === 'debugLog') {
         const { level, message: text, source } = message.payload ?? {}
         const log = level === 'error' || level === 'warn' ? console.error : console.log
-        log(`[BuryadAndroid:${source ?? 'webview'}] ${String(text ?? '').slice(0, 1000)}`)
+        log(
+          `[Buryad${Platform.OS === 'ios' ? 'iOS' : 'Android'}:${source ?? 'webview'}] ${String(text ?? '').slice(0, 1000)}`
+        )
         return
       }
 
@@ -198,7 +203,7 @@ export default function App() {
       ) : null}
       <WebView
         ref={webViewRef}
-        source={{ uri: 'file:///android_asset/buryad-web/index.html' }}
+        source={webViewSource}
         injectedJavaScriptBeforeContentLoaded={bridgeScript}
         onMessage={handleMessage}
         onLoadStart={(event) =>
@@ -221,17 +226,22 @@ export default function App() {
           debugError('webview', 'HTTP error while loading app UI', { url, statusCode, description })
           setStartupError(`The app UI could not load (HTTP ${statusCode}).`)
         }}
-        onRenderProcessGone={(event) => {
-          debugError('webview', 'Android WebView renderer exited', event.nativeEvent)
-          setStartupError('The Android WebView renderer stopped unexpectedly. Check device logs.')
-        }}
+        onRenderProcessGone={
+          Platform.OS === 'android'
+            ? (event) => {
+                debugError('webview', 'Android WebView renderer exited', event.nativeEvent)
+                setStartupError(
+                  'The Android WebView renderer stopped unexpectedly. Check device logs.'
+                )
+              }
+            : undefined
+        }
         onShouldStartLoadWithRequest={({ url }) => {
-          const allowed =
-            url.startsWith('file:///android_asset/buryad-web/') || url === 'about:blank'
+          const allowed = isAllowedWebViewUrl(url)
           if (!allowed) debugLog('webview', 'Blocked navigation outside app assets', { url })
           return allowed
         }}
-        originWhitelist={['file://*', 'about:blank']}
+        originWhitelist={webViewOriginWhitelist}
         allowFileAccess
         allowFileAccessFromFileURLs={false}
         allowUniversalAccessFromFileURLs={false}

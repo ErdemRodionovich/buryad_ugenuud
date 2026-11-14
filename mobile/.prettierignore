@@ -1,4 +1,6 @@
 android/
+ios/
 web/
 src/worker.bundle.js
 worker-addons/
+worker-addons-ios/Frameworks/

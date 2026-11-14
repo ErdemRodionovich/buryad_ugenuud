@@ -16,6 +16,7 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "build:android-web": "vite --config mobile/vite.config.mjs build",
+    "build:mobile-web": "vite --config mobile/vite.config.mjs build",
     "install:all": "npm i --ignore-scripts=true && npm run postinstall:all",
     "install:mac": "npm i --ignore-scripts=true && npm run postinstall:mac",
     "postinstall:all": "npm run install:electron",
