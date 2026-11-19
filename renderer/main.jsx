@@ -90,6 +90,21 @@ function App() {
     setTranslations
   } = useContext(TranslationCreationContext)
 
+  const interfaceLanguagePicker = (className, showLabel = false) => (
+    <label className={className}>
+      <span className={showLabel ? undefined : 'visually-hidden'}>{t('Interface language')}</span>
+      <select
+        aria-label={t('Interface language')}
+        value={locale}
+        onChange={(event) => setLocale(event.target.value)}
+      >
+        <option value='en'>English</option>
+        <option value='bua'>Буряад</option>
+        <option value='ru'>Русский</option>
+      </select>
+    </label>
+  )
+
   useEffect(() => {
     window.bridge.startWorker(workerSpecifier)
     const offStdout = window.bridge.onWorkerStdout(workerSpecifier, (data) =>
@@ -237,11 +252,11 @@ function App() {
           kind: pollKind,
           ...(pollKind === 'translation'
             ? {
-              translationDetails: {
-                languageOfWordForTranslation: translationPoll.language,
-                wordsForTranslation: translationPoll.words
+                translationDetails: {
+                  languageOfWordForTranslation: translationPoll.language,
+                  wordsForTranslation: translationPoll.words
+                }
               }
-            }
             : {})
         }
       }
@@ -328,37 +343,7 @@ function App() {
   return (
     <main className='container'>
       <header className='topbar'>
-        <div>
-          <p className='eyebrow'>Buryad Ugenuud</p>
-          <h1>
-            {updateReady
-              ? t('Update ready!')
-              : selectedUser?.nickname ||
-              (page === 'language' ? activeLanguage?.name : null) ||
-              t('Language library')}
-          </h1>
-        </div>
-        <span className='status'>
-          {peerCount} {plural('peer', peerCount)} {t('connected')} ·{' '}
-          {status === 'UPDATING...'
-            ? t('Updating...')
-            : status === 'Updating...'
-              ? t('Updating...')
-              : status}
-        </span>
-        <label className='locale-picker'>
-          <span className='visually-hidden'>{t('Interface language')}</span>
-          <select
-            aria-label={t('Interface language')}
-            value={locale}
-            onChange={(event) => setLocale(event.target.value)}
-          >
-            <option value='en'>English</option>
-            <option value='bua'>Буряад</option>
-            <option value='ru'>Русский</option>
-          </select>
-        </label>
-        {profileLoaded && profile.nickname && (
+        {profileLoaded && profile.nickname ? (
           <button
             className='menu-toggle'
             type='button'
@@ -369,7 +354,48 @@ function App() {
           >
             ☰ {t('Menu')}
           </button>
+        ) : (
+          interfaceLanguagePicker('locale-picker')
         )}
+        <div>
+          <p className='eyebrow'>Buryad Ugenuud</p>
+          <h1>
+            {updateReady
+              ? t('Update ready!')
+              : selectedUser?.nickname ||
+                (page === 'language' ? activeLanguage?.name : null) ||
+                t('Language library')}
+          </h1>
+        </div>
+        <span
+          className='status'
+          role='status'
+          aria-label={`${peerCount} ${plural('peer', peerCount)} ${t('connected')} · ${
+            status === 'UPDATING...' || status === 'Updating...' ? t('Updating...') : status
+          }`}
+        >
+          <svg className='peer-count-icon' viewBox='0 0 20 20' aria-hidden='true' focusable='false'>
+            <path
+              d='M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 16v-1a5 5 0 0 1 10 0v1M13 4.2a3 3 0 0 1 0 5.7m1.5 1.6a4.5 4.5 0 0 1 3.5 4.4v.1'
+              fill='none'
+              stroke='currentColor'
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth='1.6'
+            />
+          </svg>
+          <span>{peerCount}</span>
+          <span className='status-divider' aria-hidden='true'>
+            ·
+          </span>
+          <span className='status-version' aria-hidden='true'>
+            {status === 'UPDATING...'
+              ? t('Updating...')
+              : status === 'Updating...'
+                ? t('Updating...')
+                : status}
+          </span>
+        </span>
       </header>
       {menuOpen && (
         <>
@@ -459,6 +485,7 @@ function App() {
                 </button>
               )}
             </nav>
+            {interfaceLanguagePicker('menu-locale-picker', true)}
           </aside>
         </>
       )}
@@ -833,8 +860,8 @@ function App() {
               roles={
                 canManageLanguage && rolesLanguageId === activeLanguageId
                   ? languageRoles.find(
-                    (user) => user.userKey.toLowerCase() === selectedUser.userKey
-                  )?.roles || []
+                      (user) => user.userKey.toLowerCase() === selectedUser.userKey
+                    )?.roles || []
                   : []
               }
               onBack={() => setSelectedUser(null)}

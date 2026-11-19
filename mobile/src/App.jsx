@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar'
 import * as Clipboard from 'expo-clipboard'
 import { reloadAppAsync } from 'expo-modules-core'
 import { WebView } from 'react-native-webview'
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import PearRuntime from 'pear-mobile'
 import FramedStream from 'framed-stream'
 import b4a from 'b4a'
@@ -37,7 +38,7 @@ function debugError(scope, message, details) {
   }
 }
 
-export default function App() {
+function AppContent() {
   const webViewRef = useRef(null)
   const pipeRef = useRef(null)
   const [startupError, setStartupError] = useState('')
@@ -194,7 +195,7 @@ export default function App() {
   )
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style='dark' />
       {startupError ? (
         <View style={styles.errorBanner}>
@@ -258,7 +259,15 @@ export default function App() {
           </View>
         )}
       />
-    </View>
+    </SafeAreaView>
+  )
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AppContent />
+    </SafeAreaProvider>
   )
 }
 
