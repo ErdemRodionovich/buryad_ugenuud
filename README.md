@@ -68,6 +68,7 @@ There are many things TODO:
 * Documentation:
   * README
   * User guide
+* After publishing poll, open just created one
 
 <br>
 This app is based on P2P platform [Pear](https://docs.pears.com/)
