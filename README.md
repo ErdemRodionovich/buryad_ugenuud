@@ -69,6 +69,7 @@ There are many things TODO:
   * README
   * User guide
 * After publishing poll, open just created one
+* Remove poll button
 
 <br>
 This app is based on P2P platform [Pear](https://docs.pears.com/)

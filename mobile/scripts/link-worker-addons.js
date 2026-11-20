@@ -24,20 +24,36 @@ function getLinkedAddons() {
   const metadata = JSON.parse(bundle.slice(firstLineEnd + 1, metadataEnd))
   const addons = new Set()
 
-  function collect(value) {
-    if (typeof value === 'string') {
-      if (value.startsWith('linked:') && value.endsWith('.so')) {
-        addons.add(value.slice('linked:'.length))
+  for (const resolution of Object.values(metadata.resolutions)) {
+    const packagePath = resolution['#package']
+    const packageJsonPath =
+      typeof packagePath === 'string'
+        ? path.resolve(projectRoot, packagePath.replace(/^\//, ''))
+        : null
+
+    function collect(value) {
+      if (value && typeof value === 'object') {
+        if (value.addon && typeof value.addon.android === 'string') {
+          const addon = value.addon.android
+          if (addon.startsWith('linked:') && addon.endsWith('.so')) {
+            const packageJson = packageJsonPath
+              ? JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
+              : null
+            const androidExport = packageJson?.exports?.['.']?.android
+
+            if (androidExport !== './unsupported.js') {
+              addons.add(addon.slice('linked:'.length))
+            }
+          }
+        }
+
+        for (const child of Object.values(value)) collect(child)
       }
-      return
     }
 
-    if (value && typeof value === 'object') {
-      for (const child of Object.values(value)) collect(child)
-    }
+    collect(resolution)
   }
 
-  collect(metadata.resolutions)
   if (addons.size === 0) throw new Error('The worker bundle does not declare linked native addons.')
   return addons
 }

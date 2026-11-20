@@ -33,7 +33,7 @@ module.exports = {
     },
     android: {
       package: 'com.erdem.badluev.buryadugenuud',
-      versionCode: 3,
+      versionCode: 4,
       adaptiveIcon: {
         foregroundImage: '../buryad_ugenuud_icon.png',
         backgroundColor: '#fbfcf8'
